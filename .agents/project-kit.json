@@ -1,0 +1,91 @@
+{
+  "adaptations": [
+    "windows-exclusive-port",
+    "portable-source-urls",
+    "utf8-bounded-tests",
+    "existing-laravel-rules-preserved",
+    "explicit-context-src-relocation"
+  ],
+  "created_date": "2026-11-04",
+  "files_sha256": {
+    ".agents/project.json": "61f01dea179b650ba47d6ba5246c376c26691e1eaf9ef4f64a066aacc4375030",
+    ".agents/skills/arquitectura-hexagonal-ddd/SKILL.md": "ea67a20e8aea508632320674e6310d4a0f8b8ac71d6eeac5c9a60e1d5bdfb9f4",
+    ".agents/skills/arquitectura-hexagonal-ddd/agents/openai.yaml": "7ae8784e54ae2d73941bd980413a2ca34d207e076c0a93d74989666e43bc1fbb",
+    ".agents/skills/arquitectura-hexagonal-ddd/references/flutter.md": "19aa7590a8883baadd732be9f0ad469704f28b140ebe4a19fb64006f154cd988",
+    ".agents/skills/arquitectura-hexagonal-ddd/references/go.md": "ee89d2a0dbf0f4ed46a2394f865e28e0985e7a8e0faebc6ff274f794fb3cfcbc",
+    ".agents/skills/arquitectura-hexagonal-ddd/references/laravel.md": "d2deb4797af32329edf1bb8e036d7e89f53d5a2e9088dc1308158b555b119a28",
+    ".agents/skills/manage-project-roadmap/SKILL.md": "882e308cf1513b226f6cb2b0987b5a3b35d94582c5f15ee6c7b9db986401c32b",
+    ".agents/skills/manage-project-roadmap/agents/openai.yaml": "67c8dcfdaf4dd01e7b0a0a755d1dafa716fd3f598d671e7b9e34159452d664a4",
+    ".agents/skills/manage-project-roadmap/assets/roadmap-tree.css": "21021214fc65de95e5dd0d012b61aa2feaeb8f62e3294998bdcf9905d4f49734",
+    ".agents/skills/manage-project-roadmap/assets/roadmap-tree.html": "7154a77bbae81e3acd301c2e370c46ccae5f0e7fd606511b51c29770576d7168",
+    ".agents/skills/manage-project-roadmap/assets/roadmap-tree.js": "b9754338a9ca8c00a81eaf9ec0603c9a8eb39cd847ec5b1c8c5ef5b36a3ca3b6",
+    ".agents/skills/manage-project-roadmap/scripts/plan_model.py": "3f729295a18b5237facdcc31d283a1f6bf46ee448577f3f4510a8eb838d898ad",
+    ".agents/skills/manage-project-roadmap/scripts/roadmap.py": "ea794bda3a6496e862ddfa2d54a03316d58dc545e024413f129ab2ae8c25f211",
+    ".agents/skills/manage-project-roadmap/scripts/roadmap_server.py": "33df9b337abbb27296373e90717e91df812d9f00710cec5f9b30117ca09d66ee",
+    ".agents/skills/plan-maestro-desarrollo-sistema/SKILL.md": "e3b8434610fc8722108f66eb2e42cfa7232c3d92ced8e7ae9a0f24f75dc86ee7",
+    ".agents/skills/plan-maestro-desarrollo-sistema/agents/openai.yaml": "e0200951b1e5db5b4e4333eb8265755a1aac3ee9d0cea219aab029c4bf2f1ff7",
+    ".agents/skills/plan-maestro-desarrollo-sistema/references/plan-schema.json": "2835f0c7374daf96dff0e577d5c5accf470e33b45e99fc6ada28a0d61aed4689",
+    ".agents/skills/plan-maestro-desarrollo-sistema/references/plan-schema.md": "8711c4f56d40bf1fdbc85fd2e86103d9f3c93f545fa40e6a4205bfa2d64e37da",
+    "AGENTS.md": "2d3f9dfdc1d774dd80b02ceb8f53b1b79fa287a4e6c7aa7d0574f5331617ada7",
+    "docs/arquitectura/README.md": "22a0f2e9a0ddf22c2cf92f9e6f8aec0a5d3e4b90cd2ca0b0ab53626df3fb30fd",
+    "docs/decisiones/README.md": "d20e675e412e421c4df0bc4b0f5e0dfc77b5ca84318637477038cfc5ce4739d4",
+    "docs/fuentes/README.md": "5bdcca91336bd56407d944d2ba36c25ab13e47d73a30a74652604499c2c3b234",
+    "docs/plan-maestro/00-preparacion.md": "a91ace2481c42a414381b40b27866fa12c56725818ffe9d2f7848cd3bfdcb2ea",
+    "docs/plan-maestro/01-kit-arquitectura.md": "ce28d566c849d7092a4b7faaf43521f3032824f4552ee589033b9c58304a4d30",
+    "docs/plan-maestro/README.md": "ddcb4d65bebad4a7c2aa49751b2ac8b39627cd9fea8094506cdf04eaaf532c0d",
+    "docs/plantillas/decision.md": "0485bf31b8a41caffcbd8b2410977d12fc0bd6356ecbb34a88b22487cc3d0cd4",
+    "docs/plantillas/modulo.md": "13e8e4b4a049f66885f3a3dfb27f91a48ca50d91394760f88e79ead793b0a78c",
+    "docs/plantillas/tarea.md": "5abe3867b5e1a2439b3c4746e6eecf51174bd3b37b57319f29cf151ee1e4c3e0",
+    "docs/plantillas/traspaso.md": "3179c8ac7fde678d4bd61dcbd55603b1679be07c5a877535d3012250514a7d08",
+    "docs/proyecto.md": "d0f73a215fe985501404002b92cf898184737071b875bb05e022e978d40298f8"
+  },
+  "history": [
+    {
+      "files_sha256": {
+        ".agents/project.json": "8bab8b02baa1e3c7ac769583a5183f50225fa2349e65a59601796f320013b84f",
+        ".agents/skills/arquitectura-hexagonal-ddd/SKILL.md": "a0a5d395fc157859f0d41c0e0055e46664b7be7015fa89f133ecdf1326cdfb77",
+        ".agents/skills/arquitectura-hexagonal-ddd/agents/openai.yaml": "7ae8784e54ae2d73941bd980413a2ca34d207e076c0a93d74989666e43bc1fbb",
+        ".agents/skills/arquitectura-hexagonal-ddd/references/flutter.md": "69b7439b728acc02f78db4613881917741321610cb7d747decbec154e2c67397",
+        ".agents/skills/arquitectura-hexagonal-ddd/references/go.md": "415b6c6633933ef738b3237f12a25866587e141bc28b8fcae098870b9bc50500",
+        ".agents/skills/arquitectura-hexagonal-ddd/references/laravel.md": "6de697d9d7eedcf43ee433656a8d6620e591bb996299c4509df370e7ccd653d9",
+        ".agents/skills/manage-project-roadmap/SKILL.md": "882e308cf1513b226f6cb2b0987b5a3b35d94582c5f15ee6c7b9db986401c32b",
+        ".agents/skills/manage-project-roadmap/agents/openai.yaml": "67c8dcfdaf4dd01e7b0a0a755d1dafa716fd3f598d671e7b9e34159452d664a4",
+        ".agents/skills/manage-project-roadmap/assets/roadmap-tree.css": "21021214fc65de95e5dd0d012b61aa2feaeb8f62e3294998bdcf9905d4f49734",
+        ".agents/skills/manage-project-roadmap/assets/roadmap-tree.html": "7154a77bbae81e3acd301c2e370c46ccae5f0e7fd606511b51c29770576d7168",
+        ".agents/skills/manage-project-roadmap/assets/roadmap-tree.js": "b9754338a9ca8c00a81eaf9ec0603c9a8eb39cd847ec5b1c8c5ef5b36a3ca3b6",
+        ".agents/skills/manage-project-roadmap/scripts/plan_model.py": "3f729295a18b5237facdcc31d283a1f6bf46ee448577f3f4510a8eb838d898ad",
+        ".agents/skills/manage-project-roadmap/scripts/roadmap.py": "ea794bda3a6496e862ddfa2d54a03316d58dc545e024413f129ab2ae8c25f211",
+        ".agents/skills/manage-project-roadmap/scripts/roadmap_server.py": "33df9b337abbb27296373e90717e91df812d9f00710cec5f9b30117ca09d66ee",
+        ".agents/skills/plan-maestro-desarrollo-sistema/SKILL.md": "680028d175f8302f4ff24718ce63f0d6eaf384fa7a06fa68b7beeb695ea70d85",
+        ".agents/skills/plan-maestro-desarrollo-sistema/agents/openai.yaml": "e0200951b1e5db5b4e4333eb8265755a1aac3ee9d0cea219aab029c4bf2f1ff7",
+        ".agents/skills/plan-maestro-desarrollo-sistema/references/plan-schema.json": "2835f0c7374daf96dff0e577d5c5accf470e33b45e99fc6ada28a0d61aed4689",
+        ".agents/skills/plan-maestro-desarrollo-sistema/references/plan-schema.md": "8711c4f56d40bf1fdbc85fd2e86103d9f3c93f545fa40e6a4205bfa2d64e37da",
+        "AGENTS.md": "8c67a22bbdae15efd26cb7fcad71b39a872ff3463ddef6eeadbcb2a8af0dcbdd",
+        "docs/arquitectura/README.md": "3a51e5fdbaa559795e41491b242aaf6a8d2f3c10939f2d355de23499d8b4a2a4",
+        "docs/decisiones/README.md": "6036512d970d013a500911b01d5d69a4e71b40bc20d5ad559c3a8a759d69f806",
+        "docs/plan-maestro/00-preparacion.md": "9d234191e730a8979e55d979f6813ea2c2e267eade5c9dfa4aaeab8b09fbded7",
+        "docs/plan-maestro/01-kit-arquitectura.md": "a7ade09127bac3ddef1aee8c7c0a273ac5e484f9b7ba88b260769bdfcf3c0dc3",
+        "docs/plan-maestro/README.md": "02b5a2d14880a8bf5ebc1ee3ec3f88055a2950a684f66588ca27bc57ab815443",
+        "docs/plantillas/decision.md": "0485bf31b8a41caffcbd8b2410977d12fc0bd6356ecbb34a88b22487cc3d0cd4",
+        "docs/plantillas/modulo.md": "13e8e4b4a049f66885f3a3dfb27f91a48ca50d91394760f88e79ead793b0a78c",
+        "docs/plantillas/tarea.md": "5abe3867b5e1a2439b3c4746e6eecf51174bd3b37b57319f29cf151ee1e4c3e0",
+        "docs/plantillas/traspaso.md": "3179c8ac7fde678d4bd61dcbd55603b1679be07c5a877535d3012250514a7d08",
+        "docs/proyecto.md": "0c8b4ab5002cf819877861079600605872b5fa8f6cc35765c9f1360649c75a66"
+      },
+      "kit_version": "1.0.0",
+      "upstream": {
+        "commit": "e073de35c24e58ba79a9dd376cd610e5f5a21e41",
+        "url": "https://github.com/wj-004/Promt-AI"
+      }
+    }
+  ],
+  "integration": "existing-project-merge",
+  "kit_version": "1.1.0",
+  "namespace_prefix": "Simon\\",
+  "reusable_source": "resources/kit-inicio-proyecto",
+  "source_root": "src",
+  "upstream": {
+    "commit": "04f621f12421e819bfeb1cc1518c4e864617d14e",
+    "url": "https://github.com/wj-004/Promt-AI"
+  }
+}

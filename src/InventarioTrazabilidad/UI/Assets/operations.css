@@ -1,0 +1,26 @@
+.operations { margin: 0; background: #f1f5f9; color: #0f172a; font: 16px/1.55 system-ui, sans-serif; }
+.operations-header { padding: 1rem 2rem; background: #0f172a; color: #fff; display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; }
+.operations-header a { color: #fff; text-decoration: underline; text-underline-offset: .2rem; }
+.operations-header nav { display: flex; gap: 1.5rem; }
+.operations-main { max-width: 1280px; padding: 2rem 1rem; margin: auto; }
+.operations h1 { font-size: 2rem; font-weight: 750; margin-bottom: 1rem; }
+.operations h2 { font-size: 1.35rem; font-weight: 700; margin-bottom: .75rem; }
+.operations h3 { font-size: 1.1rem; font-weight: 700; }
+.operations-card { background: #fff; border: 1px solid #94a3b8; border-radius: .75rem; padding: 1.25rem; margin: 1rem 0; }
+.operations summary { cursor: pointer; font-size: 1.1rem; font-weight: 700; min-height: 44px; }
+.operations form { display: grid; gap: 1rem; padding: .75rem 0; }
+.operations label { display: flex; flex-direction: column; gap: .35rem; font-weight: 600; }
+.operations input, .operations select, .operations textarea { background: #fff; color: #0f172a; font: inherit; border: 1px solid #64748b; border-radius: .35rem; min-height: 44px; padding: .5rem .65rem; max-width: 100%; }
+.operations input[type=checkbox] { width: 24px; min-height: 24px; vertical-align: middle; accent-color: #075985; }
+.operations label:has(input[type=checkbox]) { flex-direction: row; align-items: center; gap: .65rem; }
+.operations button { min-height: 48px; border-radius: .35rem; padding: .65rem 1rem; font: inherit; font-weight: 700; color: #fff; background: #075985; cursor: pointer; justify-self: start; }
+.operations button:disabled { opacity: .65; }
+.operations :focus-visible { outline: 3px solid #b45309; outline-offset: 3px; }
+.operations-grid, .operations-checks { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.operations-table { overflow-x: auto; }
+.operations table { border-collapse: collapse; width: 100%; margin: .75rem 0; }
+.operations th, .operations td { text-align: left; padding: .7rem; border-bottom: 1px solid #cbd5e1; }
+.operations th { background: #e2e8f0; }
+.operations-success { background: #dcfce7; color: #14532d; padding: 1rem; border: 1px solid #166534; }
+.operations-error { background: #fee2e2; color: #7f1d1d; padding: 1rem; border: 1px solid #991b1b; }
+.operations ul { list-style: disc; padding-left: 1.5rem; }

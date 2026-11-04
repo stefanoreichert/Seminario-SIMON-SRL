@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\User;
+use Simon\Acceso\Infrastructure\Persistence\User;
 
 return [
 

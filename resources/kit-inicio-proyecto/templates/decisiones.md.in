@@ -1,0 +1,5 @@
+# Decisiones de {{NAME}}
+
+Registrar decisiones confirmadas y preguntas pendientes con fuente y fecha usando [la plantilla](../plantillas/decision.md). Una pregunta no es una decisión adoptada. La arquitectura hexagonal con DDD es la base del arranque; el stack se consulta y se registra en la ficha.
+
+No hay decisiones comerciales inferidas por la instalación. Las exclusiones explícitas reciben un ID `DEC-AAAA-MM-DD-NN`, referenciado desde las tareas afectadas. Al sustituir una decisión, conservar la anterior y explicar qué cambió.

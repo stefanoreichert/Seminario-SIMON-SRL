@@ -1,0 +1,10 @@
+{
+  "name": "Seminario SIMON SRL",
+  "namespace_prefix": "Simon\\",
+  "plan_schema_version": 1,
+  "profile": "laravel",
+  "source_root": "src",
+  "source_root_override": false,
+  "sources_index": "docs/fuentes/README.md",
+  "stage": "implementacion"
+}

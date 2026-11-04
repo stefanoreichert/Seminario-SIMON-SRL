@@ -1,0 +1,91 @@
+Actores internos
+
+
+
+
+Actores externos
+
+
+
+
+
+
+
+
+
+
+Módulo de Gestión de Clientes y Administración
+
+
+- RF01: Gestión de perfiles de clientes: El sistema debe permitir el registro, consulta y actualización de datos comerciales (CUIT, teléfono, correo) y el historial crediticio de los clientes.
+
+- RF02: Soporte de múltiples direcciones: Debe permitir asociar diversas direcciones de entrega a un mismo cliente para evitar errores logísticos
+
+- RF03: Flujo de autorización de despachos (Filtro Administrativo): El sistema debe impedir la liberación de mercadería en el depósito si no cuenta con una validación previa de facturación y estado crediticio realizada por administración.
+
+- RF04: Gestión impositiva específica: Capacidad para generar y gestionar los formularios impositivos de Rentas 322 y 344 para operaciones con entidades públicas.
+
+
+Módulo de Ventas y Pedidos
+
+
+- RF05: Carga masiva de pedidos: El sistema debe permitir registrar múltiples artículos (modelo, color, talle y cantidad) simultáneamente en un solo formulario por nota de pedido, eliminando la carga individual ítem por ítem.
+- RF06: Identificación de origen de pedidos: Debe clasificar las notas de pedido según su origen utilizando las letras identificatorias ("S" para Sandra, "G" para Gustavo y "F" para Fábrica).
+- RF07: Control preventivo de duplicación: El sistema debe asignar números únicos a las notas de pedido y controlar su estado para reemplazar el uso del "cuaderno bizarro" y evitar pedidos duplicados.
+- RF08: Consulta de Pedidos Pendientes (PP): Funcionalidad para visualizar en tiempo real la mercadería adeudada a los clientes y las necesidades de producción
+
+
+Módulo de Depósito, Stock y Trazabilidad
+
+
+- RF09: Registro digital de trazabilidad IRAM: El sistema debe obligar a la vinculación de los números de lote y partida a cada par de calzado despachado, permitiendo búsquedas históricas instantáneas
+
+- RF10: Sincronización de Stock Real: Debe automatizar el cálculo de la suma algebraica (Stock Disponible + Producción en Proceso - Pedidos Pendientes) en tiempo real para determinar las necesidades de inyección
+
+- RF11: Picking con identificación única: Implementar el uso de lectores de códigos de barras/QR para asignar un ID único por par, optimizando la preparación y garantizando el control de vencimiento de insumos como las bases de poliuretano
+
+- RF12: Gestión de altas y bajas: Registro automatizado de ingresos desde empaque (altas) y egresos por despacho o retiro de clientes (bajas)
+
+
+Módulo de Logística y Postventa
+
+
+- RF13: Generación automática de documentos logísticos: El sistema debe emitir e imprimir remitos de entrega, rótulos de identificación y hojas de ruta automáticas por zona geográfica
+
+- RF14: Gestión de despachos parciales: Debe permitir realizar entregas parciales de una nota de pedido, reduciendo automáticamente el saldo adeudado hasta su finalización
+
+- RF15: Gestión de Garantías y Devoluciones: Permitir el registro de devoluciones (dentro de los 6 meses legales) y la generación de notas de pedido negativas para reintegrar automáticamente el stock físico
+
+
+Módulo de Reportes y Estadísticas
+
+
+- RF16: Tablero de comando para toma de decisiones: Generar informes automáticos sobre desempeño de ventas por curva, estados de producción (Informe de Planta) y rentabilidad por rubro
+
+- RF17: Estadísticas de inventario: Proveer datos sobre antigüedad y obsolescencia del stock, rotación por talle/color y distribución geográfica de pedidos
+
+
+
+
+RNF 01: Rendimiento y Velocidad de Respuesta (Trazabilidad de Lotes)
+
+Descripción: El sistema debe procesar y devolver los resultados de la búsqueda histórica de trazabilidad (asociación de clientes con números de lote y de partida de fabricación) en un tiempo máximo de 2 segundos tras ingresar el parámetro de consulta.
+
+Justificación: Actualmente, la búsqueda de trazabilidad se realiza de manera manual en soporte de papel, lo cual es descrito en el relevamiento como "un imposible" que llega a demorar varios días de revisión física de carpetas archivadas.
+
+Este requerimiento de rendimiento asegura respuestas inmediatas ante auditorías de normas IRAM y reclamos de calidad 
+
+RNF 02: Usabilidad y Ergonomía (Mitigación de Fatiga Visual)
+
+Descripción: La interfaz gráfica del módulo de depósito debe contar con un diseño de alto contraste, tipografía clara con un tamaño mínimo de 14 píxeles, campos legibles y botones de gran tamaño, adaptados para operar de forma ágil y facilitar la lectura en entornos industriales mediante la integración con lectoras de códigos de barras o códigos QR.
+
+Justificación: La encargada de depósito, Claudia, debe lidiar diariamente con planillas impresas con fuentes sumamente pequeñas para anotar manualmente números de partida extensos, lo que le provoca una alta fatiga visual ("estar ciega anotando numeritos") y eleva el riesgo de cometer errores humanos de transcripción 
+
+RNF 03: Seguridad, Control de Acceso y Auditoría de Inventario
+
+Descripción: El sistema debe restringir las funciones mediante un control de accesos basado en roles asignados individualmente (Nadia con perfil de Administración; Claudia con perfil de Depósito; Pablo con perfil de Producción) y registrar de manera obligatoria un historial de auditoría (log) no modificable que almacene la fecha, hora, identidad del usuario y cantidad de pares de calzado modificados en cada alta o baja de stock.
+
+Justificación: El relevamiento evidenció una vulnerabilidad crítica de seguridad y control físico en el stock, debido a que se han detectado faltantes de mercadería ocasionados por el retiro informal de calzado por parte de los propietarios durante los fines de semana, sin que se dé aviso ni se registre la baja administrativa en los sistemas correspondientes 
+
+
+

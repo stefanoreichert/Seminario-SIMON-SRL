@@ -1,0 +1,56 @@
+# Preparación de {{NAME}}
+
+La instalación prepara las herramientas y la raíz `{{SOURCE_ROOT}}/` con `.gitkeep`; las tareas siguientes requieren análisis del proyecto. El stack y las fuentes se consultan al iniciar, usando los datos ya informados. No se generaron funcionalidades.
+
+## Tareas
+
+### [PENDIENTE] INI-001 — Relevar requisitos, fuentes y stack
+
+- **Capa:** SOLICITADO
+- **Fuente:** solicitud de preparación del proyecto registrada el {{DATE}}
+- **Contexto propietario:** plataforma y definición del producto
+- **Dependencias:** ninguna
+- **Alcance:** relevar objetivo, actores, procesos, restricciones y decisiones tecnológicas confirmadas
+- **Fuera de alcance:** implementar funcionalidades o elegir un stack por inferencia
+- **Invariantes:** distinguir solicitud, propuesta, exclusión y evidencia; conservar decisiones confirmadas
+- **Contratos y archivos previstos:** docs/proyecto.md, docs/fuentes/README.md y docs/decisiones
+- **Criterios de aceptación:** consulta explícita de fuentes respondida y registrada en su índice, incluida la confirmación de no tener fuentes adicionales si corresponde; stack consultado, requisitos conocidos y preguntas materiales registradas sin inventar respuestas
+- **Responsable:** sin asignar
+- **Fecha de inicio:** pendiente
+- **Última actualización:** {{DATE}}
+- **Próximo paso:** revisar la conversación, los adjuntos y el repositorio; preguntar por fuentes y stack pendientes, registrar la respuesta del usuario y mantener abierta la consulta hasta recibirla
+- **Evidencia actual:** se instalaron los recursos de preparación; el relevamiento funcional todavía no se realizó
+
+### [PENDIENTE] INI-002 — Definir contextos, datos y contratos de arquitectura
+
+- **Capa:** SOLICITADO
+- **Fuente:** solicitud de preparación con arquitectura hexagonal y DDD del {{DATE}}
+- **Contexto propietario:** plataforma y contextos identificados durante el relevamiento
+- **Dependencias:** INI-001
+- **Alcance:** definir lenguaje, fronteras, propiedad de datos y contratos, adaptando las capas al stack confirmado
+- **Fuera de alcance:** construir servicios, instalar frameworks o suponer microservicios
+- **Invariantes:** raíz del código src salvo elección explícita del usuario; dependencias hacia el núcleo, dominio independiente y escrituras por casos de uso
+- **Contratos y archivos previstos:** docs/arquitectura/README.md y decisiones relacionadas
+- **Criterios de aceptación:** contextos justificados por procesos y reglas bajo la raíz registrada, contratos y dependencias explícitos, autoload/imports previstos sin mover el núcleo al framework y decisiones abiertas identificadas; cualquier excepción a src tiene solicitud y fecha
+- **Responsable:** sin asignar
+- **Fecha de inicio:** pendiente
+- **Última actualización:** {{DATE}}
+- **Próximo paso:** terminar INI-001 y modelar los primeros recorridos de negocio
+- **Evidencia actual:** las skills y principios están disponibles; no se declararon contextos de negocio por defecto
+
+### [PENDIENTE] INI-003 — Consolidar un plan ejecutable con su visor
+
+- **Capa:** SOLICITADO
+- **Fuente:** solicitud de preparar plan maestro y visor del {{DATE}}
+- **Contexto propietario:** planificación del proyecto
+- **Dependencias:** INI-002
+- **Alcance:** descomponer requisitos confirmados, propuestas y definiciones en tareas con criterios, dependencias y evidencia
+- **Fuera de alcance:** comenzar desarrollo de producto por el solo hecho de listar tareas
+- **Invariantes:** esquema común, IDs estables y correspondencia entre archivos, parser y visor
+- **Contratos y archivos previstos:** docs/plan-maestro, plantillas y exportación HTML
+- **Criterios de aceptación:** requisitos conocidos cubiertos por tareas, decisiones pendientes visibles, plan válido y visor generado sin atribuir entregas inexistentes
+- **Responsable:** sin asignar
+- **Fecha de inicio:** pendiente
+- **Última actualización:** {{DATE}}
+- **Próximo paso:** completar INI-002 y crear las especificaciones por área necesarias
+- **Evidencia actual:** el plan inicial solo contiene las tareas de preparación; el producto se planifica al relevar sus requisitos

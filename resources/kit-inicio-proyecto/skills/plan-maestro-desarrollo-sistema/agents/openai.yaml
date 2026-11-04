@@ -1,0 +1,6 @@
+interface:
+  display_name: "Plan maestro del sistema"
+  short_description: "Planificar alcance, contratos, tareas y evidencia"
+  default_prompt: "Usá $plan-maestro-desarrollo-sistema para relevar el proyecto y preparar su plan trazable con el esquema compartido."
+policy:
+  allow_implicit_invocation: true

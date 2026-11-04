@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+@import '../../src/InventarioTrazabilidad/UI/Assets/operations.css';
+
+@source '../../src/**/UI/Views/**/*.blade.php';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';

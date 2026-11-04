@@ -1,0 +1,29 @@
+# Arquitectura de {{NAME}}
+
+Base acordada: arquitectura hexagonal y DDD. Perfil de adaptación: `{{PROFILE}}`. Los contextos de negocio y sus contratos se completan a partir de requisitos; instalar este documento no los define por inferencia.
+
+## Raíz obligatoria del código
+
+Usar `/src` en la raíz del repositorio, siempre salvo elección explícita del usuario. Raíz registrada para esta instalación: `{{SOURCE_ROOT}}/`. La estructura base es `src/<Contexto>/{Domain,Application,Infrastructure,UI}`; los nombres y empaquetado internos se adaptan al lenguaje sin trasladar los contextos a directorios del framework. Registrar solicitud, fecha y alcance de cualquier raíz distinta en decisiones; no deducirla del stack, un ejemplo o una estructura heredada.
+
+El instalador prepara solo la raíz con `.gitkeep`; los contextos se crean al definirlos y autorizar su trabajo. `app/Contexts` y `app/Domain` no son alternativas automáticas. Los archivos técnicos y de composición que el framework necesite fuera de esta raíz solo conectan adaptadores, sin contener reglas de negocio.
+
+## Dependencias y responsabilidades
+
+Domain contiene invariantes y conceptos del negocio. Application coordina casos de uso con contratos del núcleo. Infrastructure implementa adaptadores externos. UI/Presentation traduce entrada y salida y delega las escrituras. La composición del proyecto conecta puertos con implementaciones.
+
+No introducir dependencias del framework, ORM o SDKs dentro de Domain/Application. Elegir las fronteras transaccionales y mecanismos de entrega según invariantes. La separación por contextos no implica microservicios.
+
+## Mapa de contextos y datos
+
+Pendiente de INI-001 e INI-002: contexto propietario, lenguaje, agregados, datos, interfaces publicadas y relación con otros contextos. No crear módulos por nombres de pantallas.
+
+## Decisiones tecnológicas
+
+Consultar y registrar lenguaje/framework, UI, persistencia, identidad, operación e integraciones que falten. Adaptar autoload, imports y composición a la raíz registrada, conservando Domain/Application sin dependencias del framework. Las convenciones y comprobaciones concretas se documentan después de revisar versiones y entorno.
+
+## Verificación prevista
+
+Definir pruebas de invariantes, casos de uso y contratos, más controles de autorización, concurrencia, migración y UI cuando el producto los requiera. Un chequeo de estructura/imports no sustituye comportamiento o aceptación.
+
+Procedimiento: [skill de arquitectura](../../.agents/skills/arquitectura-hexagonal-ddd/SKILL.md). Decisiones y sus fuentes: [registro](../decisiones/README.md).

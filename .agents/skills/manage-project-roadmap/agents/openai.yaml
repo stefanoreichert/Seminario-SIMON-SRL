@@ -1,0 +1,6 @@
+interface:
+  display_name: "Visor y validador del plan"
+  short_description: "Consultar y visualizar tareas sin duplicar el plan"
+  default_prompt: "Usá $manage-project-roadmap para validar el plan y generar o abrir su árbol de tareas y dependencias."
+policy:
+  allow_implicit_invocation: true

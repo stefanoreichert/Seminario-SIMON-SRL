@@ -1,0 +1,59 @@
+1. Usuarios y permisos
+La asignación se realiza desde un módulo de gestión de usuarios, roles y permisos. Sandra y Gustavo ingresan como vendedores y registran pedidos con S y G; los nombres no se codifican como autorización.
+
+2. Clientes y crédito
+CUIT único y obligatorio. Nadia verifica y carga historial crediticio y condiciones de autorización de despachos, mediante los permisos asignados al perfil correspondiente.
+
+3. Jurisdicción tributaria
+El usuario indicó ARCA, provincia de Misiones. La fuente oficial de los formularios SR 322/344 consultada corresponde a ATM Misiones; se conserva la expresión original y se registra esta precisión.
+
+4. Sentido de modelos de formularios
+Se refiere a ejemplares o plantillas de los formularios 322/344, vacíos o ya utilizados. No se refiere a modelos de calzado. Su obtención se difiere al trabajo impositivo.
+
+5. Catálogo
+Ya existe una lista de modelos, colores y talles. Las facultades de alta/modificación se asignarán desde roles y permisos; la importación de esa lista se realizará después.
+
+6. Numeración, estados y duplicados
+Se aceptaron numeración global y estados Borrador, Confirmado, Parcial, Entregado y Anulado. La duda de duplicados distingue un reintento accidental de un nuevo pedido legítimo con los mismos artículos. Esa regla y la edición/anulación después de un parcial siguen abiertas; no se bloquean pedidos por mera coincidencia de contenido.
+
+7. Stock y producción
+Disponible representa pares físicos en depósito. Los pares terminados dejan de estar en proceso cuando Claudia confirma el alta; se conserva trazabilidad por cantidad para altas parciales.
+
+8. Lectores y vencimientos
+No hay lectores. El lote existente identifica una tanda y no un par único. La fase inicial permite captura manual. Los insumos generan advertencias antes y después del vencimiento, sin bloqueo automático por vencimiento; la anticipación será configurable en su módulo.
+
+9. Trazabilidad y norma
+Datos prioritarios: número de lote y fecha de fabricación. Norma informada: IRAM 3610. No exigir una partida distinta no confirmada. Esto no acredita certificación del software ni lectura completa de la norma.
+
+10. Autorización de implementación y cuenta corriente
+El usuario indicó «Ok, implementa» para alta al confirmar terminados y baja de stock/reducción del saldo de mercadería al confirmar despacho. El saldo monetario de cuenta corriente es independiente y no se cancela al entregar pares.
+
+11. Retiro de propietarios
+Se permite identificar el movimiento como retiro de propietarios. No se deduce una exención de registro, auditoría o autorización administrativa.
+
+12. Remitos y hojas de ruta
+Actualmente ambos son manuales. Las hojas de ruta se difieren a un módulo específico futuro. La postergación no elimina RF13 del alcance histórico.
+
+13. Devoluciones
+Plazo operativo informado: seis meses desde fabricación indicada en el calzado. Claudia aprueba. Solo vuelve al stock vendible si está en condiciones; de lo contrario no. La nota negativa registra la devolución y no genera reposición pendiente. La aplicabilidad legal se verifica al trabajar ese módulo.
+
+14. Reportes
+Curva, rubro, rentabilidad, obsolescencia y rotación se analizarán más adelante. RF16/RF17 siguen pendientes y no bloquean el corte de inventario autorizado.
+
+15. Arranque e importación
+Hay papel, Excel y otro sistema; las exportaciones se realizarán después. Propuesta de arranque: usuarios/roles; catálogo existente; clientes con CUIT; conteo de stock por lote/fecha; pedidos pendientes vigentes; luego histórico y migración monetaria conciliada.
+
+16. Canales y alcance de red
+Uso inicial dentro de fábrica; los pedidos recibidos por WhatsApp se registran manualmente en el sistema. Venta por Internet es futura; no se presume integración automática con WhatsApp.
+
+17. Concurrencia
+Deben poder operar simultáneamente todos los actores habilitados. El escenario inicial debe representar Administración, Depósito, Producción y vendedores S/G; falta volumen real de datos para dimensionar el ensayo.
+
+18. Actualización y rendimiento
+Se aceptó máximo de cinco segundos para reflejar PP/stock entre puestos, conservando dos segundos para búsqueda histórica de trazabilidad.
+
+19. Retención
+Historial de auditoría conservado indefinidamente. Sin purga ni edición/borrado desde la aplicación; desactivar usuarios conserva referencias históricas.
+
+20. Seguridad delegada
+Decisión técnica: permisos de mínimo privilegio, movimientos y auditoría atómicos, tablas append-only, firmas HMAC encadenadas con clave fuera de la base y verificador. Para resistir borrado/truncamiento por un administrador del servidor se requiere además copia/cierre externo inmutable con credenciales separadas; esa infraestructura queda explícita como SEC-001, sin afirmar que está desplegada.

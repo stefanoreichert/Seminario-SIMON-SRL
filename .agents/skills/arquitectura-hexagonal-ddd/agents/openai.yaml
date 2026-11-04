@@ -1,0 +1,6 @@
+interface:
+  display_name: "Arquitectura hexagonal y DDD"
+  short_description: "Definir contextos, puertos y límites por tecnología"
+  default_prompt: "Usá $arquitectura-hexagonal-ddd para preparar o revisar la arquitectura del proyecto con el stack confirmado."
+policy:
+  allow_implicit_invocation: true
