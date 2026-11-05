@@ -19,12 +19,14 @@ use Simon\Shared\UI\HandlesOperations;
 use Simon\VentasPedidos\Application\ListOrders;
 use Simon\VentasPedidos\Application\RegisterOrder;
 use Simon\VentasPedidos\Domain\OrderOrigin;
+use Simon\VentasPedidos\UI\OrderFormData;
+use Simon\VentasPedidos\UI\OrderRequest;
 
 final class OperationsController extends Controller
 {
     use HandlesOperations;
 
-    public function index(Request $request, AccessPolicy $access, SqlInventory $inventory, SqlCustomers $customers, ListOrders $sales): View
+    public function index(Request $request, AccessPolicy $access, SqlInventory $inventory, SqlCustomers $customers, ListOrders $sales, OrderFormData $orderForms): View
     {
         $permissions = [];
 
@@ -56,6 +58,7 @@ final class OperationsController extends Controller
         $mayReadOrders = array_any(['orders.manage', 'orders.create', 'inventory.view', 'inventory.dispatch', 'dispatch.authorize'], fn (string $permission): bool => $permissions[$permission]);
         $orderData = $mayReadOrders ? $sales->handle($request->user()->id, $originFilter) : ['orders' => [], 'lines' => []];
         $overview = $inventory->overview($withStock);
+        $operationId = (string) Str::uuid();
 
         return view($request->routeIs('operations.snapshot') ? 'inventario::balances' : 'inventario::index', [
             'section' => $section, 'pageTitle' => $modules[$section][0],
@@ -67,7 +70,8 @@ final class OperationsController extends Controller
             ...$overview, 'permissions' => $permissions, 'customers' => $customers->customers($permissions['clients.manage']),
             ...$orderData,
             'audits' => $permissions['audit.view'] ? $inventory->recentAudit() : [],
-            'operationId' => (string) Str::uuid(),
+            'operationId' => $operationId,
+            'orderForm' => $section === 'orders' && ($permissions['orders.create'] || $permissions['orders.manage']) ? $orderForms->make($request, $operationId) : null,
         ]);
     }
 
@@ -92,17 +96,12 @@ final class OperationsController extends Controller
         return $this->perform(fn (): int => $inventory->variant($request->user()->id, $data['code'], $data['model'], $data['color'], $data['size']), 'Artículo registrado.');
     }
 
-    public function order(Request $request, RegisterOrder $orders): RedirectResponse
+    public function order(OrderRequest $request, RegisterOrder $orders): RedirectResponse
     {
-        $data = $request->validate([
-            'operation_id' => ['required', 'uuid'], 'customer_id' => ['required', 'integer', 'min:1'], 'origin' => ['required', 'string', Rule::in(array_keys(OrderOrigin::labels()))],
-            'lines' => ['required', 'array', 'min:1', 'max:100'], 'lines.*.variant_id' => ['required', 'integer', 'min:1'],
-            'lines.*.quantity' => ['required', 'integer', 'min:1', 'max:1000000'],
-            'delivery_address_id' => ['nullable', 'integer', 'min:1'],
-        ]);
+        $data = $request->validated();
         $lines = array_map(fn (array $line): array => ['variant_id' => (int) $line['variant_id'], 'quantity' => (int) $line['quantity']], $data['lines']);
 
-        return $this->perform(fn (): int => $orders->handle($request->user()->id, $data['operation_id'], (int) $data['customer_id'], $data['origin'], $lines, isset($data['delivery_address_id']) ? (int) $data['delivery_address_id'] : null), 'Pedido confirmado y numerado.');
+        return $this->perform(fn (): int => $orders->handle($request->user()->id, $data['operation_id'], (int) $data['customer_id'], $data['origin'], $lines, isset($data['delivery_address_id']) ? (int) $data['delivery_address_id'] : null), 'Pedido confirmado: se guardaron todos sus artículos.', route('operations.orders', ['origin' => $data['origin']]));
     }
 
     public function authorizeDispatch(Request $request, ManageCustomers $customers): RedirectResponse

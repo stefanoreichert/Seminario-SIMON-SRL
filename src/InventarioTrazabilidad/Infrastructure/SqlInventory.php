@@ -6,14 +6,22 @@ use Closure;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use Simon\InventarioTrazabilidad\Application\CatalogVariants;
 use Simon\InventarioTrazabilidad\Application\InventorySetup;
 use Simon\InventarioTrazabilidad\Application\InventoryStore;
 use Simon\Shared\Application\Actor;
 use Simon\Shared\Application\UnitOfWork;
 use Simon\Shared\Domain\BusinessRuleViolation;
 
-final class SqlInventory implements InventorySetup, InventoryStore, UnitOfWork
+final class SqlInventory implements CatalogVariants, InventorySetup, InventoryStore, UnitOfWork
 {
+    public function missing(array $variantIds): array
+    {
+        $existing = DB::table('catalog_variants')->whereIn('id', $variantIds)->pluck('id')->all();
+
+        return array_values(array_diff($variantIds, $existing));
+    }
+
     public function variant(string $code, string $model, string $color, string $size): int
     {
         try {

@@ -1,17 +1,3 @@
-document.querySelectorAll('[data-order-form]').forEach((form) => {
-    form.querySelector('[data-add-line]')?.addEventListener('click', () => {
-        const container = form.querySelector('[data-order-lines]');
-        const index = container.children.length;
-        if (index >= 100) return;
-        const row = container.firstElementChild.cloneNode(true);
-        row.querySelectorAll('[name]').forEach((field) => {
-            field.name = field.name.replace(/lines\[\d+\]/, 'lines[' + index + ']');
-            if (field instanceof HTMLInputElement) field.value = '';
-        });
-        container.appendChild(row);
-    });
-});
-
 document.querySelectorAll('[data-address-selector]').forEach((form) => {
     const source = form.querySelector('[data-address-source]');
     const destinations = form.querySelector('[name="delivery_address_id"]');
@@ -26,9 +12,12 @@ document.querySelectorAll('[data-address-selector]').forEach((form) => {
         const defaultLabel = selected?.dataset.destinationLabel || form.dataset.emptyAddressLabel;
         destinations.replaceChildren(new Option(defaultLabel, ''));
         destinations.disabled = true;
+        form.dataset.addressLoading = 'true';
         status.textContent = 'Cargando direcciones…';
 
         if (!selected?.dataset.addressUrl) {
+            destinations.disabled = false;
+            delete form.dataset.addressLoading;
             status.textContent = 'Seleccioná primero un cliente o una línea del pedido.';
             return;
         }
@@ -47,12 +36,19 @@ document.querySelectorAll('[data-address-selector]').forEach((form) => {
             status.textContent = addresses.length ? 'Elegí el destino que corresponde a esta operación.' : 'El cliente no tiene direcciones activas. Podés registrarlas desde Clientes.';
         } catch (error) {
             if (request.signal.aborted || error.name === 'AbortError') return;
+            destinations.disabled = false;
             status.textContent = 'No se pudieron cargar las direcciones. Volvé a seleccionar el cliente o la línea para reintentar.';
+        } finally {
+            if (!request.signal.aborted) delete form.dataset.addressLoading;
         }
     };
 
     source.addEventListener('change', loadAddresses);
-    loadAddresses();
+    if (destinations.dataset.addressesReady === 'true') {
+        status.textContent = 'Se conservaron el cliente y la dirección elegidos. Podés corregir los artículos antes de confirmar.';
+    } else {
+        loadAddresses();
+    }
 });
 
 const balances = document.querySelector('[data-refresh-url]');

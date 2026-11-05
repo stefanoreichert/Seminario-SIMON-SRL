@@ -4,6 +4,7 @@ namespace Simon\VentasPedidos\Application;
 
 use Simon\Shared\Application\AccessPolicy;
 use Simon\Shared\Domain\BusinessRuleViolation;
+use Simon\VentasPedidos\Domain\OrderLines;
 use Simon\VentasPedidos\Domain\OrderOrigin;
 
 final readonly class RegisterOrder
@@ -25,28 +26,12 @@ final readonly class RegisterOrder
             throw new BusinessRuleViolation('El origen debe coincidir con el identificador del vendedor.');
         }
 
-        if ($lines === []) {
-            throw new BusinessRuleViolation('Seleccioná un origen y al menos un artículo.');
-        }
-
         if ($deliveryAddressId !== null && $deliveryAddressId < 1) {
             throw new BusinessRuleViolation('La dirección de entrega no es válida.');
         }
 
-        $seen = [];
+        $orderLines = new OrderLines($lines);
 
-        foreach ($lines as $line) {
-            if ($line['quantity'] < 1) {
-                throw new BusinessRuleViolation('Las cantidades deben ser mayores que cero.');
-            }
-
-            if ($line['variant_id'] < 1 || in_array($line['variant_id'], $seen, true)) {
-                throw new BusinessRuleViolation('Combiná las cantidades de las líneas del mismo artículo.');
-            }
-
-            $seen[] = $line['variant_id'];
-        }
-
-        return $this->orders->register($operationId, $customerId, $actor->id, $orderOrigin->value, $lines, $deliveryAddressId);
+        return $this->orders->register($operationId, $customerId, $actor->id, $orderOrigin->value, $orderLines->items, $deliveryAddressId);
     }
 }

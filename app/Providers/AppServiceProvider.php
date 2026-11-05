@@ -12,6 +12,7 @@ use Simon\ClientesAdministracion\Application\CustomerRecords;
 use Simon\ClientesAdministracion\Application\DeliveryAddresses;
 use Simon\ClientesAdministracion\Infrastructure\SqlCustomers;
 use Simon\ClientesAdministracion\Infrastructure\SqlDeliveryAddresses;
+use Simon\InventarioTrazabilidad\Application\CatalogVariants;
 use Simon\InventarioTrazabilidad\Application\DispatchAuthorization;
 use Simon\InventarioTrazabilidad\Application\InventorySetup;
 use Simon\InventarioTrazabilidad\Application\InventoryStore;
@@ -38,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
             UnitOfWork::class => SqlInventory::class,
             InventoryStore::class => SqlInventory::class,
             InventorySetup::class => SqlInventory::class,
+            CatalogVariants::class => SqlInventory::class,
             OrderFulfillment::class => SqlOrderFulfillment::class,
             DispatchAuthorization::class => SqlCustomers::class,
             CustomerRecords::class => SqlCustomers::class,
@@ -63,6 +65,7 @@ class AppServiceProvider extends ServiceProvider
         $this->loadViewsFrom(base_path('src/Acceso/UI/Views'), 'acceso');
         $this->loadViewsFrom(base_path('src/ClientesAdministracion/UI/Views'), 'clientes');
         $this->loadViewsFrom(base_path('src/InventarioTrazabilidad/UI/Views'), 'inventario');
+        $this->loadViewsFrom(base_path('src/VentasPedidos/UI/Views'), 'ventas');
         $this->commands([
             BootstrapAccess::class,
             VerifyInventoryAudit::class,

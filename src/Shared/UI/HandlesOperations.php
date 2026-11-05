@@ -10,7 +10,7 @@ use Simon\Shared\Domain\PermissionDenied;
 
 trait HandlesOperations
 {
-    protected function perform(Closure $operation, string $message): RedirectResponse
+    protected function perform(Closure $operation, string $message, ?string $redirectUrl = null): RedirectResponse
     {
         try {
             $operation();
@@ -20,6 +20,6 @@ trait HandlesOperations
             throw ValidationException::withMessages(['operation' => $exception->getMessage()]);
         }
 
-        return back()->with('status', $message);
+        return ($redirectUrl === null ? back() : redirect($redirectUrl))->with('status', $message);
     }
 }

@@ -5,13 +5,14 @@ namespace Simon\VentasPedidos\Infrastructure;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Simon\ClientesAdministracion\Application\DeliveryAddresses;
+use Simon\InventarioTrazabilidad\Application\CatalogVariants;
 use Simon\Shared\Domain\BusinessRuleViolation;
 use Simon\VentasPedidos\Application\OrderQueries;
 use Simon\VentasPedidos\Application\OrderRegistration;
 
 final class SqlOrderRegistration implements OrderQueries, OrderRegistration
 {
-    public function __construct(private readonly DeliveryAddresses $addresses) {}
+    public function __construct(private readonly DeliveryAddresses $addresses, private readonly CatalogVariants $catalog) {}
 
     public function register(string $operationId, int $customerId, int $sellerId, string $origin, array $lines, ?int $deliveryAddressId = null): int
     {
@@ -34,6 +35,10 @@ final class SqlOrderRegistration implements OrderQueries, OrderRegistration
                     }
 
                     return $previous->id;
+                }
+
+                if ($this->catalog->missing(array_column($lines, 'variant_id')) !== []) {
+                    throw new BusinessRuleViolation('Uno de los artículos ya no existe en el catálogo. Revisá todas las líneas antes de confirmar.');
                 }
 
                 $destination = $deliveryAddressId === null ? null : $this->addresses->snapshot($customerId, $deliveryAddressId);

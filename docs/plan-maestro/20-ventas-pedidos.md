@@ -18,22 +18,29 @@ El estado inicial era un esqueleto sin procesos comerciales. El corte INV-001 in
 
 ## Tareas
 
-### [PARCIAL] RF-005 — Cargar múltiples artículos en un solo formulario de nota de pedido
+### [HECHO] RF-005 — Cargar múltiples artículos en un solo formulario de nota de pedido
 
 - **Capa:** SOLICITADO
-- **Fuente:** SRS-2026-11-04, RF05; aclaraciones posteriores SRS-ACL-2026-11-04; DEC-2026-11-04-05
+- **Fuente:** SRS-2026-11-04, RF05; aclaraciones posteriores SRS-ACL-2026-11-04; DEC-2026-11-04-05; autorización explícita del 2026-11-04 de completar únicamente RF-005 y revisar su dependencia de seguridad; DEC-2026-11-04-10
 - **Contexto propietario:** VentasPedidos (frontera propuesta)
-- **Dependencias:** RF-001, RF-002, RNF-003
+- **Dependencias:** RF-001, RF-002, ACC-001
 - **Alcance:** Capturar y guardar en una nota varias líneas con modelo, color, talle y cantidad, sin guardar cada ítem individualmente.
 - **Fuera de alcance:** Importar planillas o archivos masivos: la fuente solicita un formulario con múltiples artículos.
-- **Invariantes:** La nota conserva la correspondencia entre cada combinación y su cantidad; definir validaciones y tratamiento de líneas repetidas antes del desarrollo.
-- **Contratos y archivos previstos:** Propuesta: nota y líneas de pedido, contrato de identificación de artículos/variantes, caso de uso de carga conjunta y formulario de ventas.
+- **Invariantes:** La nota conserva cada combinación y su cantidad. Entre una y cien líneas distintas, con cantidades enteras de uno a un millón de pares. Artículos repetidos o inválidos rechazan la nota completa sin sumar ni descartar líneas silenciosamente. El token y la copia del destino conservan la semántica de reintento existente.
+- **Contratos y archivos previstos:** src/VentasPedidos/Domain/OrderLines.php; RegisterOrder/OrderRegistration y SqlOrderRegistration; CatalogVariants publicado por InventarioTrazabilidad e implementado por SqlInventory; UI/OrderRequest.php, OrderFormData.php, Views/order-form.blade.php, Views/order-line.blade.php y Assets/order-form.js en VentasPedidos. Composición AppServiceProvider, integración OperationsController y tests/Feature/MultipleArticleOrdersTest.php.
 - **Criterios de aceptación:** Un formulario permite ingresar varios artículos y guardarlos conjuntamente en una nota; al consultar se mantienen todas las combinaciones y cantidades. Se verifica una carga con una línea inválida y se aplica el comportamiento de guardado acordado sin pérdida silenciosa de ítems.
 - **Responsable:** Codex
 - **Fecha de inicio:** 2026-11-04
 - **Última actualización:** 2026-11-04
-- **Próximo paso:** integrar dirección de entrega y completar los criterios comerciales del formulario
-- **Evidencia actual:** El corte registra varias líneas de modelo/color/talle/cantidad en un formulario y confirma una nota; restan las direcciones completas de RF-002 y demás recorridos comerciales. No se importaron catálogos reales.
+- **Próximo paso:** ninguno en RF-005; tarea cerrada. Continuar una sola tarea del plan por vez cuando el usuario lo indique. UI-001 conserva su revisión visual pendiente.
+- **Evidencia actual:** Base histórica de INV-001: formulario inicial con varias líneas y confirmación conjunta; se habían anotado direcciones y otros recorridos incompletos. RF-002 cerró las direcciones posteriormente. Cierre de RF-005 del 2026-11-04 bajo DEC-2026-11-04-10:
+  - Comercial / Pedidos, en /admin/pedidos, conserva layout, sidebar y controles Filament. Permite agregar y quitar filas, mantiene al menos una y aplica el límite de cien; cada artículo se elige por código, modelo, color y talle junto con su cantidad.
+  - El formulario comienza vacío para evitar seleccionar automáticamente un cliente/artículo/origen administrativo. Tras un rechazo recupera todas las filas, cantidades, cliente, dirección, origen y token válidos, con errores junto a cada campo. Cambiar cliente recarga sus destinos; la recuperación no borra la dirección elegida. Un pedido confirmado redirige a la consulta del mismo origen.
+  - OrderLines protege las invariantes también fuera de HTTP: rechaza tipos incorrectos, cantidades inválidas, filas incompletas o repetidas y columnas ajenas al contrato. CatalogVariants verifica existencia mediante un contrato publicado; la persistencia vuelve a comprobarla antes de insertar y confirma cabecera/líneas dentro de la transacción existente.
+  - Pruebas verifican que una segunda línea inválida no guarde parte del pedido y que un fallo SQL simulado en una línea posterior revierta cabecera y líneas anteriores. Corregir el error permite confirmar todas las combinaciones/cantidades; reenviar el mismo token no duplica la nota. No se agregan escrituras de stock, tandas ni auditoría de movimientos.
+  - Dos subagentes revisaron arquitectura e interfaz en modo lectura. Detectaron una comprobación HTTP de dirección activa que impedía reintentos históricos: se retiró y la vigencia permanece en la transacción después de resolver el token. Una prueba HTTP confirma conservación de ID/número/destino tras editar e inactivar la dirección y rechazo de esa dirección para una nota nueva. También se ajusta el número de los avisos al quitar filas.
+  - Nueva cobertura: catorce pruebas en MultipleArticleOrdersTest sobre carga conjunta, recuperación, permisos, duplicados, tipos/columnas, catálogo, límites, reversión, reintentos y ausencia de movimientos físicos. El conjunto RF-005/direcciones/orígenes aprobó 41 pruebas y 559 aserciones. Suite final: php vendor/phpunit/phpunit/phpunit, 77 pruebas y 1040 aserciones aprobadas. Pint, npm.cmd run build, node --check de ambos scripts y git diff --check aprobados.
+  - RF-001, RF-002 y ACC-001 están HECHO y sus recorridos permanecen cubiertos por la suite. Sin migraciones ni cambios de dependencias, credenciales o datos comerciales reales; php artisan migrate --pretend devuelve Nothing to migrate. No se importaron catálogos reales. Evidencia funcional/renderizado HTTP sobre SQLite y revisión estática de JavaScript; no acredita clics en navegador, revisión visual, MySQL productivo ni operación con volumen real. UI-001, RNF-003, SEC-001 y RF-007 mantienen su alcance y estado propios.
 
 ### [HECHO] RF-006 — Identificar el origen de las notas mediante S, G y F
 

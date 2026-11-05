@@ -162,7 +162,7 @@ class OrderOriginsTest extends TestCase
         }
 
         $response = $this->actingAs($this->admin)->get(route('operations.orders'))->assertOk();
-        $this->assertSame(3, $this->xpath($response->getContent())->query('//form[@data-order-form]//select[@name="origin"]/option')->length);
+        $this->assertSame(3, $this->xpath($response->getContent())->query('//form[@data-order-form]//select[@name="origin"]/option[@value!=""]')->length);
 
         foreach (['S', 'G', 'F'] as $origin) {
             $id = $this->order($this->admin, $origin);
