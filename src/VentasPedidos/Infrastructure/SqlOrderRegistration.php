@@ -6,9 +6,10 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Simon\ClientesAdministracion\Application\DeliveryAddresses;
 use Simon\Shared\Domain\BusinessRuleViolation;
+use Simon\VentasPedidos\Application\OrderQueries;
 use Simon\VentasPedidos\Application\OrderRegistration;
 
-final class SqlOrderRegistration implements OrderRegistration
+final class SqlOrderRegistration implements OrderQueries, OrderRegistration
 {
     public function __construct(private readonly DeliveryAddresses $addresses) {}
 
@@ -57,9 +58,10 @@ final class SqlOrderRegistration implements OrderRegistration
     }
 
     /** @return list<object> */
-    public function orders(?int $sellerId = null): array
+    public function orders(?int $sellerId = null, ?string $origin = null): array
     {
         return DB::table('business_orders')->when($sellerId !== null, fn ($query) => $query->where('seller_id', $sellerId))
+            ->when($origin !== null, fn ($query) => $query->where('origin', $origin))
             ->orderByDesc('id')->limit(200)->get()->map(function (object $order): object {
                 $order->delivery_destination = $order->delivery_destination === null ? null : json_decode($order->delivery_destination, true, flags: JSON_THROW_ON_ERROR);
 

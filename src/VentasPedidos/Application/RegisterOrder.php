@@ -4,6 +4,7 @@ namespace Simon\VentasPedidos\Application;
 
 use Simon\Shared\Application\AccessPolicy;
 use Simon\Shared\Domain\BusinessRuleViolation;
+use Simon\VentasPedidos\Domain\OrderOrigin;
 
 final readonly class RegisterOrder
 {
@@ -18,11 +19,13 @@ final readonly class RegisterOrder
             throw new BusinessRuleViolation('La identificación de la operación no es válida.');
         }
 
-        if ($permission === 'orders.create' && ($actor->salesIdentifier === null || $actor->salesIdentifier !== $origin)) {
+        $orderOrigin = OrderOrigin::parse($origin);
+
+        if ($permission === 'orders.create' && ($actor->salesIdentifier === null || $actor->salesIdentifier !== $orderOrigin->value)) {
             throw new BusinessRuleViolation('El origen debe coincidir con el identificador del vendedor.');
         }
 
-        if (! in_array($origin, ['S', 'G', 'F'], true) || $lines === []) {
+        if ($lines === []) {
             throw new BusinessRuleViolation('Seleccioná un origen y al menos un artículo.');
         }
 
@@ -44,6 +47,6 @@ final readonly class RegisterOrder
             $seen[] = $line['variant_id'];
         }
 
-        return $this->orders->register($operationId, $customerId, $actor->id, $origin, $lines, $deliveryAddressId);
+        return $this->orders->register($operationId, $customerId, $actor->id, $orderOrigin->value, $lines, $deliveryAddressId);
     }
 }

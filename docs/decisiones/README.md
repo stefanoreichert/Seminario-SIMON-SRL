@@ -84,4 +84,15 @@ Ubicación histórica bajo app sustituida por DEC-2026-11-04-06. Se conservan la
 - Alternativa: conservar un dashboard Filament con pantallas externas de otro aspecto. Se adopta el panel y su tema como marco común para la gestión.
 - Verificación: suite y build del producto, más revisión visual. UI-001 conserva PARCIAL mientras la comprobación visual completa no pueda realizarse; no se confunde HTML aprobado con aceptación humana ni ergonomía industrial.
 
+## DEC-2026-11-04-09 — Consulta por origen sin ampliar permisos en RF-006
+
+- Fecha y fuente: 2026-11-04, el usuario autorizó completar RF-006 tras concretar etiquetas S · Sandra, G · Gustavo, F · Fábrica, filtro por origen y controles de identificador dentro de Filament.
+- Decisión: OrderOrigin es la definición de los tres códigos y sus denominaciones. El código del pedido representa su origen comercial; no se deriva del nombre actual de una persona ni concede permisos.
+- Registro: se mantiene la política existente: orders.create exige el identificador de la cuenta autenticada; orders.manage permite elegir cualquier origen al registrar. Un reintento con otro origen no modifica una nota confirmada. La edición de pedidos y sus transiciones conservan su tarea RF-007.
+- Consulta: ListOrders aplica autorización y alcance por actor antes de usar el puerto OrderQueries. El filtro refina ese alcance; no lo amplía ni permite elegir un vendedor mediante parámetros. Los permisos de lectura global existentes se conservan.
+- UI: filtro GET y tabla por notas dentro del panel Filament. Las etiquetas también aparecen en el registro, saldos y autorizaciones. El fragmento de refresco conserva el filtro aplicado; no se reinicia al recibir datos actualizados.
+- Límite existente: hasta 200 notas recientes por consulta permitida. Se filtra en persistencia antes del límite y se informa en la pantalla; no se filtran únicamente las últimas 200 notas de todos los orígenes.
+- Alternativa: filtrar en el navegador o inferir privilegios por letra/nombre. Se eligen consultas autorizadas en servidor y reglas de dominio, evitando exposición de notas ajenas.
+- Alcance: sin migraciones, reclasificación de notas previas, creación de cuentas personales ni cambios en otras RF. Las pruebas locales y el renderizado no sustituyen aceptación humana o carga productiva; UI-001 mantiene su revisión visual pendiente.
+
 Para decisiones posteriores usar [la plantilla](../plantillas/decision.md), conservar historial, fuente, alternativas y alcance. Las exclusiones explícitas se identifican con `DEC-AAAA-MM-DD-NN` en Fuente de las tareas afectadas.

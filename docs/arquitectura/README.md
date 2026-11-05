@@ -64,6 +64,7 @@ INI-002 cierra los contratos del corte autorizado. Las preguntas de formularios/
 ## Contratos y persistencia del corte
 
 - AccessPolicy resuelve identidad y permiso en servidor; ManageAccess configura usuarios/roles. SqlAccess implementa el adaptador y protege el último administrador activo.
+- RF-006 define OrderOrigin en Domain de VentasPedidos y ListOrders/OrderQueries en Application. La consulta autoriza al actor, conserva el alcance por vendedor o permiso global y aplica el filtro S/G/F en persistencia antes de limitar resultados. UI consume el caso de uso de lectura en lugar de decidir el alcance mediante un adaptador SQL; las etiquetas no conceden acceso.
 - MoveStock coordina InventoryStore, UnitOfWork, OrderFulfillment y DispatchAuthorization. Los adaptadores de ventas y administración implementan los puertos de inventario; el núcleo no importa esos adaptadores.
 - SqlInventory posee existencias, tandas en proceso como entrada operativa, movimientos y auditoría. Los saldos de pedido se modifican mediante el puerto publicado por ventas; las validaciones se obtienen por el puerto de administración.
 - RF-002 publica DeliveryAddresses desde ClientesAdministracion: listado por cliente y resolución de un domicilio activo para su copia. Ventas e inventario consumen el contrato y no leen las tablas de domicilios. ManageAddresses valida permisos y DeliveryAddress valida sus datos sin depender de Laravel.

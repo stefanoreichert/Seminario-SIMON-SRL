@@ -20,6 +20,7 @@ use Simon\InventarioTrazabilidad\Infrastructure\SqlInventory;
 use Simon\InventarioTrazabilidad\UI\Console\VerifyInventoryAudit;
 use Simon\Shared\Application\AccessPolicy;
 use Simon\Shared\Application\UnitOfWork;
+use Simon\VentasPedidos\Application\OrderQueries;
 use Simon\VentasPedidos\Application\OrderRegistration;
 use Simon\VentasPedidos\Infrastructure\SqlOrderFulfillment;
 use Simon\VentasPedidos\Infrastructure\SqlOrderRegistration;
@@ -43,6 +44,7 @@ class AppServiceProvider extends ServiceProvider
             AddressRecords::class => SqlDeliveryAddresses::class,
             DeliveryAddresses::class => SqlDeliveryAddresses::class,
             OrderRegistration::class => SqlOrderRegistration::class,
+            OrderQueries::class => SqlOrderRegistration::class,
         ];
 
         foreach ($bindings as $contract => $implementation) {

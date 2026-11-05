@@ -7,6 +7,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Simon\Acceso\Domain\Permissions;
 use Simon\ClientesAdministracion\Application\ManageCustomers;
 use Simon\ClientesAdministracion\Infrastructure\SqlCustomers;
@@ -15,14 +16,15 @@ use Simon\InventarioTrazabilidad\Application\PrepareInventory;
 use Simon\InventarioTrazabilidad\Infrastructure\SqlInventory;
 use Simon\Shared\Application\AccessPolicy;
 use Simon\Shared\UI\HandlesOperations;
+use Simon\VentasPedidos\Application\ListOrders;
 use Simon\VentasPedidos\Application\RegisterOrder;
-use Simon\VentasPedidos\Infrastructure\SqlOrderRegistration;
+use Simon\VentasPedidos\Domain\OrderOrigin;
 
 final class OperationsController extends Controller
 {
     use HandlesOperations;
 
-    public function index(Request $request, AccessPolicy $access, SqlInventory $inventory, SqlCustomers $customers, SqlOrderRegistration $sales): View
+    public function index(Request $request, AccessPolicy $access, SqlInventory $inventory, SqlCustomers $customers, ListOrders $sales): View
     {
         $permissions = [];
 
@@ -44,18 +46,26 @@ final class OperationsController extends Controller
         abort_unless(is_string($section) && isset($modules[$section]), 404);
         abort_unless(array_any($modules[$section][1], fn (string $permission): bool => $permissions[$permission]), 403);
         $withStock = $permissions['inventory.view'] || $permissions['inventory.receive'] || $permissions['inventory.dispatch'] || $permissions['production.manage'] || $permissions['inventory.opening'];
-        $allOrders = $permissions['orders.manage'] || $permissions['inventory.view'] || $permissions['inventory.dispatch'] || $permissions['dispatch.authorize'];
-        $orders = ($allOrders || $permissions['orders.create']) ? $sales->orders($allOrders ? null : $request->user()->id) : [];
+        $originFilter = null;
+
+        if ($section === 'orders') {
+            $filters = $request->validate(['origin' => ['nullable', 'string', Rule::in(array_keys(OrderOrigin::labels()))]]);
+            $originFilter = $filters['origin'] ?? null;
+        }
+
+        $mayReadOrders = array_any(['orders.manage', 'orders.create', 'inventory.view', 'inventory.dispatch', 'dispatch.authorize'], fn (string $permission): bool => $permissions[$permission]);
+        $orderData = $mayReadOrders ? $sales->handle($request->user()->id, $originFilter) : ['orders' => [], 'lines' => []];
         $overview = $inventory->overview($withStock);
 
         return view($request->routeIs('operations.snapshot') ? 'inventario::balances' : 'inventario::index', [
             'section' => $section, 'pageTitle' => $modules[$section][0],
+            'originFilter' => $originFilter, 'originLabels' => OrderOrigin::labels(),
             'showStock' => $withStock && in_array($section, ['overview', 'stock', 'dispatch'], true),
             'showProduction' => $withStock && in_array($section, ['overview', 'production', 'stock'], true),
             'showOrders' => in_array($section, ['overview', 'orders', 'dispatch', 'authorization'], true),
             'withStock' => $withStock,
             ...$overview, 'permissions' => $permissions, 'customers' => $customers->customers($permissions['clients.manage']),
-            'orders' => $orders, 'lines' => $sales->lines(array_map(fn (object $order): int => $order->id, $orders)),
+            ...$orderData,
             'audits' => $permissions['audit.view'] ? $inventory->recentAudit() : [],
             'operationId' => (string) Str::uuid(),
         ]);
@@ -85,7 +95,7 @@ final class OperationsController extends Controller
     public function order(Request $request, RegisterOrder $orders): RedirectResponse
     {
         $data = $request->validate([
-            'operation_id' => ['required', 'uuid'], 'customer_id' => ['required', 'integer', 'min:1'], 'origin' => ['required', 'in:S,G,F'],
+            'operation_id' => ['required', 'uuid'], 'customer_id' => ['required', 'integer', 'min:1'], 'origin' => ['required', 'string', Rule::in(array_keys(OrderOrigin::labels()))],
             'lines' => ['required', 'array', 'min:1', 'max:100'], 'lines.*.variant_id' => ['required', 'integer', 'min:1'],
             'lines.*.quantity' => ['required', 'integer', 'min:1', 'max:1000000'],
             'delivery_address_id' => ['nullable', 'integer', 'min:1'],

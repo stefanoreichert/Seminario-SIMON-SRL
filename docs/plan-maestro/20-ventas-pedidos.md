@@ -35,22 +35,29 @@ El estado inicial era un esqueleto sin procesos comerciales. El corte INV-001 in
 - **Próximo paso:** integrar dirección de entrega y completar los criterios comerciales del formulario
 - **Evidencia actual:** El corte registra varias líneas de modelo/color/talle/cantidad en un formulario y confirma una nota; restan las direcciones completas de RF-002 y demás recorridos comerciales. No se importaron catálogos reales.
 
-### [PARCIAL] RF-006 — Identificar el origen de las notas mediante S, G y F
+### [HECHO] RF-006 — Identificar el origen de las notas mediante S, G y F
 
 - **Capa:** SOLICITADO
-- **Fuente:** SRS-2026-11-04, RF06; aclaraciones posteriores SRS-ACL-2026-11-04; DEC-2026-11-04-05
+- **Fuente:** SRS-2026-11-04, RF06; aclaraciones posteriores SRS-ACL-2026-11-04; DEC-2026-11-04-05; autorización explícita del 2026-11-04 de completar RF-006 con etiquetas y filtro S/G/F dentro de Filament; DEC-2026-11-04-09
 - **Contexto propietario:** VentasPedidos (frontera propuesta)
 - **Dependencias:** ACC-001
 - **Alcance:** Clasificar y consultar notas según S para Sandra, G para Gustavo y F para Fábrica.
 - **Fuera de alcance:** Conceder permisos por el nombre de una persona o permitir que un vendedor suplante otro identificador.
 - **Invariantes:** Conservar exactamente las tres correspondencias de la fuente; el origen no concede roles ni identifica por sí solo al usuario autenticado.
-- **Contratos y archivos previstos:** Propuesta: valor de origen de pedido en VentasPedidos y traducción de entrada/salida en el formulario y consultas.
+- **Contratos y archivos previstos:** src/VentasPedidos/Domain/OrderOrigin.php; casos RegisterOrder/ListOrders y puerto OrderQueries en Application; SqlOrderRegistration y binding en AppServiceProvider. Integración de OperationsController, vistas Filament index/balances y tests/Feature/OrderOriginsTest.php.
 - **Criterios de aceptación:** Se registra y recupera cada origen con su letra y denominación correctas; se distingue entre notas S, G y F al consultar. Se rechazan valores no definidos y se acuerda quién puede modificar el origen.
 - **Responsable:** Codex
 - **Fecha de inicio:** 2026-11-04
 - **Última actualización:** 2026-11-04
-- **Próximo paso:** asignar cuentas reales S/G desde el módulo y validar los recorridos con sus usuarios
-- **Evidencia actual:** El módulo de usuarios permite identificador S/G/F único y roles configurables. El servidor obliga al vendedor a usar su identificador; quien tenga orders.manage puede cargar cualquier origen. Pruebas cubren S y rechazo de suplantación de G; las cuentas reales se configuran en la puesta en marcha.
+- **Próximo paso:** ninguno en RF-006; tarea cerrada. Las cuentas e identificadores reales se configuran desde ACC-001 en la puesta en marcha, sin inventar usuarios. Continuar una sola tarea pendiente del plan por vez.
+- **Evidencia actual:** Base de INV-001: identificadores únicos configurables, servidor que exige el identificador del vendedor y permiso orders.manage para registrar cualquier origen. Cierre de RF-006 del 2026-11-04:
+  - OrderOrigin centraliza S · Sandra, G · Gustavo y F · Fábrica como conjunto cerrado, sin dependencias del framework. Registro, opciones y etiquetas de consulta usan esa misma definición y rechazan valores no definidos en HTTP y casos de uso.
+  - Pedidos en /admin/pedidos incorpora filtro por origen y opción Todos los orígenes, tabla de notas con letra/nombre, estado y destino, y origen visible en líneas pendientes y autorizaciones. Selectores, secciones, botones y badges conservan Filament y su sidebar. Quitar el filtro recupera la consulta permitida al usuario.
+  - ListOrders coordina el puerto OrderQueries y comprueba permisos en Application. Un vendedor consulta solo sus propias notas, aun filtrando otro origen o enviando seller_id ajeno; los permisos existentes de gestión/depósito/administración conservan su consulta global. El filtro no concede permisos de registro.
+  - Cada vendedor registra únicamente su identificador; orders.manage permite elegir cualquiera al registrar. El origen confirmado se conserva: reenviar un token con otro origen se rechaza en lugar de modificar o duplicar la nota. No se agrega una edición del origen ni las transiciones futuras de RF-007.
+  - El refresco automático conserva el origen aplicado en la URL del fragmento y mantiene aisladas sus líneas. El filtro se ejecuta en SQL antes del límite existente de 200 notas recientes, explicitado en la pantalla; se verifica con una nota de otro origen anterior a 201 notas nuevas. No se modifica la paginación/consulta histórica de otros requisitos.
+  - Pruebas específicas: 11 pruebas y 187 aserciones aprobadas. Incluyen registro/recuperación S/G/F, etiquetas, filtrado, identificadores suplantados, permisos de lectores, nombres que no conceden acceso, filtros inválidos/arreglos, preservación del filtro, aislamiento entre notas del mismo origen y reintento sin reclasificación. Suite completa: 63 pruebas y 857 aserciones aprobadas; Pint, npm.cmd run build y git diff --check aprobados.
+  - Sin cambios de dependencias, esquema, credenciales, asignaciones personales ni datos comerciales reales. migrate --pretend devuelve Nothing to migrate. La evidencia es funcional/renderizado HTTP sobre SQLite local; no acredita MySQL productivo ni revisión visual adicional. UI-001 conserva por separado su verificación visual pendiente.
 
 ### [PARCIAL] RF-007 — Asignar numeración única y controlar estados para prevenir pedidos duplicados
 
