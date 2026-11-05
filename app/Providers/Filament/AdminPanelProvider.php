@@ -7,20 +7,20 @@ use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
 use Filament\Navigation\NavigationItem;
-use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
+use Filament\Support\Enums\Width;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Simon\Acceso\Domain\Permissions;
 use Simon\Shared\Application\AccessPolicy;
+use Simon\Shared\UI\Dashboard;
+use Simon\Shared\UI\PanelLocale;
+use Simon\Shared\UI\PrivateOperations;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -30,16 +30,23 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->brandName('SIMON SRL')
+            ->viteTheme('src/Shared/UI/Assets/filament.css')
+            ->maxContentWidth(Width::Full)
+            ->sidebarCollapsibleOnDesktop()
+            ->navigationGroups(['Comercial', 'Fábrica', 'Administración'])
             ->login()
             ->navigationItems([
-                NavigationItem::make('Operaciones de fábrica')->url(fn (): string => route('operations.index'))
-                    ->visible(fn (): bool => auth()->check() && collect(array_keys(Permissions::all()))
-                        ->reject(fn (string $permission): bool => $permission === 'access.manage')
-                        ->contains(fn (string $permission): bool => app(AccessPolicy::class)->allows(auth()->id(), $permission))),
-                NavigationItem::make('Usuarios y permisos')->url(fn (): string => route('access.index'))
-                    ->visible(fn (): bool => auth()->check() && app(AccessPolicy::class)->allows(auth()->id(), 'access.manage')),
-                NavigationItem::make('Clientes')->url(fn (): string => route('customers.index'))
-                    ->visible(fn (): bool => auth()->check() && app(AccessPolicy::class)->allows(auth()->id(), 'clients.manage')),
+                $this->module('Clientes', 'customers.index', 'Comercial', 'heroicon-o-users', ['clients.manage'], 10, 'customers.*'),
+                $this->module('Pedidos', 'operations.orders', 'Comercial', 'heroicon-o-shopping-bag', ['orders.create', 'orders.manage', 'inventory.view', 'inventory.dispatch', 'dispatch.authorize'], 20),
+                $this->module('Catálogo', 'operations.catalog', 'Fábrica', 'heroicon-o-squares-2x2', ['catalog.manage', 'inventory.view'], 10),
+                $this->module('Producción', 'operations.production.index', 'Fábrica', 'heroicon-o-cog-6-tooth', ['production.manage', 'inventory.view', 'inventory.receive'], 20),
+                $this->module('Stock', 'operations.stock', 'Fábrica', 'heroicon-o-cube', ['inventory.view', 'inventory.receive', 'inventory.opening', 'inventory.dispatch'], 30),
+                $this->module('Despachos', 'operations.dispatch.index', 'Fábrica', 'heroicon-o-truck', ['inventory.dispatch'], 40),
+                $this->module('Autorizaciones', 'operations.authorization', 'Administración', 'heroicon-o-shield-check', ['dispatch.authorize'], 10),
+                $this->module('Usuarios', 'access.index', 'Administración', 'heroicon-o-user-circle', ['access.manage'], 20),
+                $this->module('Roles y permisos', 'access.roles', 'Administración', 'heroicon-o-key', ['access.manage'], 30),
+                $this->module('Auditoría', 'operations.audit', 'Administración', 'heroicon-o-clipboard-document-list', ['audit.view'], 40),
             ])
             ->colors([
                 'primary' => Color::Amber,
@@ -50,10 +57,6 @@ class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
-            ->widgets([
-                AccountWidget::class,
-                FilamentInfoWidget::class,
-            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
@@ -64,9 +67,31 @@ class AdminPanelProvider extends PanelProvider
                 SubstituteBindings::class,
                 DisableBladeIconComponents::class,
                 DispatchServingFilamentEvent::class,
+                PanelLocale::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+                PrivateOperations::class,
+            ], isPersistent: true);
+    }
+
+    /** @param list<string> $permissions */
+    private function module(string $label, string $route, string $group, string $icon, array $permissions, int $sort, ?string $activePattern = null): NavigationItem
+    {
+        return NavigationItem::make($label)->url(fn (): string => route($route))->group($group)->icon($icon)->sort($sort)
+            ->isActiveWhen(fn (): bool => request()->routeIs($activePattern ?? $route))
+            ->visible(function () use ($permissions): bool {
+                if (! auth()->check()) {
+                    return false;
+                }
+
+                foreach ($permissions as $permission) {
+                    if (app(AccessPolicy::class)->allows(auth()->id(), $permission)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
     }
 }

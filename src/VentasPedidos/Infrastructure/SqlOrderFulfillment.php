@@ -16,13 +16,16 @@ final class SqlOrderFulfillment implements OrderFulfillment
             throw new BusinessRuleViolation('La línea del pedido no existe.');
         }
 
-        $status = DB::table('business_orders')->where('id', $line->order_id)->value('status');
+        $order = DB::table('business_orders')->where('id', $line->order_id)->first();
 
-        if (! in_array($status, ['Confirmado', 'Parcial'], true)) {
+        if ($order === null || ! in_array($order->status, ['Confirmado', 'Parcial'], true)) {
             throw new BusinessRuleViolation('El pedido no admite despachos en su estado actual.');
         }
 
-        return (array) $line;
+        return [
+            ...(array) $line, 'customer_id' => $order->customer_id,
+            'delivery_destination' => $order->delivery_destination === null ? null : json_decode($order->delivery_destination, true, flags: JSON_THROW_ON_ERROR),
+        ];
     }
 
     public function dispatch(int $lineId, int $quantity): void

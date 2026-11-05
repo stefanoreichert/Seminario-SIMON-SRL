@@ -1,5 +1,4 @@
 @import 'tailwindcss';
-@import '../../src/InventarioTrazabilidad/UI/Assets/operations.css';
 
 @source '../../src/**/UI/Views/**/*.blade.php';
 

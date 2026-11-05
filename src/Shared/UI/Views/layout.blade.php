@@ -1,18 +1,13 @@
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>@yield('title') · SIMON SRL</title>
-@vite(['resources/css/app.css', 'resources/js/app.js'])
-</head>
-<body class="operations">
-<header class="operations-header"><a href="{{ route('filament.admin.pages.dashboard') }}">SIMON SRL · Panel</a><span>{{ auth()->user()->name }}</span>
-<nav aria-label="Gestión"><a href="{{ route('operations.index') }}">Operaciones</a>
-@if(app(\Simon\Shared\Application\AccessPolicy::class)->allows(auth()->id(), 'clients.manage'))<a href="{{ route('customers.index') }}">Clientes</a>@endif
-@if(app(\Simon\Shared\Application\AccessPolicy::class)->allows(auth()->id(), 'access.manage'))<a href="{{ route('access.index') }}">Usuarios y permisos</a>@endif
-</nav></header>
-<main class="operations-main"><h1>@yield('title')</h1>
-@if(session('status'))<p class="operations-success" role="status">{{ session('status') }}</p>@endif
-@if($errors->any())<div class="operations-error" role="alert"><p>Revisá los datos:</p><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-@yield('content')
-</main></body></html>
+@push('scripts')
+    @vite('resources/js/app.js')
+@endpush
+<x-filament-panels::layout.index>
+    <div class="fi-page">
+        <header class="fi-header"><h1 class="fi-header-heading">@yield('title')</h1></header>
+        <div class="simon-content">
+            @if(session('status'))<x-filament::section icon="heroicon-o-check-circle" icon-color="success"><p role="status">{{ session('status') }}</p></x-filament::section>@endif
+            @if($errors->any())<x-filament::section icon="heroicon-o-exclamation-triangle" icon-color="danger" heading="Revisá los datos"><ul class="list-disc space-y-1 ps-5 text-sm" role="alert">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></x-filament::section>@endif
+            @yield('content')
+        </div>
+    </div>
+</x-filament-panels::layout.index>

@@ -21,6 +21,7 @@ final class AccessController extends Controller
         abort_unless($access->allows($request->user()->id, 'access.manage'), 403);
 
         return view('acceso::index', [
+            'section' => $request->route('section', 'users'),
             'roles' => DB::table('access_roles')->orderBy('name')->get(),
             'users' => DB::table('users')->select('id', 'name', 'email', 'sales_identifier', 'is_active')->orderBy('name')->get(),
             'assignments' => DB::table('access_user_roles')->get()->groupBy('user_id'),

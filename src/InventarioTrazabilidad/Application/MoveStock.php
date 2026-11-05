@@ -2,6 +2,7 @@
 
 namespace Simon\InventarioTrazabilidad\Application;
 
+use Simon\ClientesAdministracion\Application\DeliveryAddresses;
 use Simon\InventarioTrazabilidad\Domain\MovementRules;
 use Simon\Shared\Application\AccessPolicy;
 use Simon\Shared\Application\UnitOfWork;
@@ -15,6 +16,7 @@ final readonly class MoveStock
         private InventoryStore $inventory,
         private OrderFulfillment $orders,
         private DispatchAuthorization $authorizations,
+        private DeliveryAddresses $addresses,
     ) {}
 
     public function receive(int $actorId, string $operationId, int $productionId, int $quantity): int
@@ -60,14 +62,22 @@ final readonly class MoveStock
         });
     }
 
-    public function dispatch(int $actorId, string $operationId, int $orderLineId, int $batchId, int $quantity, bool $ownerWithdrawal = false): int
+    public function dispatch(int $actorId, string $operationId, int $orderLineId, int $batchId, int $quantity, bool $ownerWithdrawal = false, ?int $deliveryAddressId = null): int
     {
         $actor = $this->access->require($actorId, 'inventory.dispatch');
         MovementRules::operationId($operationId);
         MovementRules::quantity($quantity);
         $request = ['kind' => 'dispatch', 'order_line_id' => $orderLineId, 'batch_id' => $batchId, 'quantity' => $quantity, 'owner_withdrawal' => $ownerWithdrawal];
 
-        return $this->transactions->run(function () use ($actor, $operationId, $orderLineId, $batchId, $quantity, $ownerWithdrawal, $request): int {
+        if ($deliveryAddressId !== null) {
+            if ($deliveryAddressId < 1) {
+                throw new BusinessRuleViolation('La dirección de entrega no es válida.');
+            }
+
+            $request['delivery_address_id'] = $deliveryAddressId;
+        }
+
+        return $this->transactions->run(function () use ($actor, $operationId, $orderLineId, $batchId, $quantity, $ownerWithdrawal, $request, $deliveryAddressId): int {
             $previous = $this->inventory->replay($operationId, $actor->id, $request);
 
             if ($previous !== null) {
@@ -75,6 +85,12 @@ final readonly class MoveStock
             }
 
             $line = $this->orders->line($orderLineId);
+            $destination = $deliveryAddressId === null ? $line['delivery_destination'] : $this->addresses->snapshot($line['customer_id'], $deliveryAddressId);
+
+            if ($destination === null && ! $ownerWithdrawal) {
+                throw new BusinessRuleViolation('Seleccioná una dirección de entrega para este pedido antes de despachar.');
+            }
+
             $authorization = $this->authorizations->assertAuthorized($line['order_id']);
             $stock = $this->inventory->stock($batchId);
             MovementRules::batch($stock['lot'], $stock['manufactured_on']);
@@ -86,7 +102,7 @@ final readonly class MoveStock
             $this->orders->dispatch($orderLineId, $quantity);
             $this->inventory->decrease($batchId, $quantity);
 
-            return $this->inventory->record($operationId, $actor, $ownerWithdrawal ? 'owner_withdrawal' : 'dispatch', $quantity, $batchId, $orderLineId, $request, $authorization);
+            return $this->inventory->record($operationId, $actor, $ownerWithdrawal ? 'owner_withdrawal' : 'dispatch', $quantity, $batchId, $orderLineId, $request, $authorization, $destination ?? []);
         });
     }
 }

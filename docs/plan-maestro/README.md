@@ -39,6 +39,8 @@ Antes de comenzar una tarea, registrar responsable, inicio y próximo paso. HECH
 
 Los estados se calculan desde las tareas; este índice no mantiene contadores de avance. Las dependencias representan prerrequisitos técnicos propuestos y no una prioridad comercial ni un compromiso de fechas. Las dudas no convierten automáticamente un requisito en BLOQUEADO. El [visor actualizado](visualizacion.html) consume el mismo esquema.
 
+La instrucción posterior DEC-2026-11-04-08 fija Filament como interfaz común y autoriza continuar las RF una por vez. UI-001 registra la unificación del panel y su verificación; esa tarea no cambia los estados de requisitos de negocio por reorganizar sus pantallas.
+
 ## Comandos
 
 ```sh

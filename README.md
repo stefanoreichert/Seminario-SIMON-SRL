@@ -77,6 +77,6 @@ El saldo de mercadería disminuye al despachar; la deuda monetaria no se cancela
 
 El código propio vive en `src/<Contexto>/{Domain,Application,Infrastructure,UI}` y usa `Simon\\` mediante Composer. Acceso, ClientesAdministracion, InventarioTrazabilidad, VentasPedidos y Shared están allí. `App\\` conserva la composición técnica. [Arquitectura y descubrimiento de migraciones](docs/arquitectura/README.md) y [registro del traslado](docs/plan-maestro/04-traslado-contextos-src.md).
 
-Las vistas propias y activos de operaciones también viven bajo UI/Views y UI/Assets de src. AppServiceProvider registra las vistas; las entradas de Vite en resources importan los activos del contexto.
+Las vistas y activos propios viven bajo UI/Views y UI/Assets de src. AppServiceProvider registra las vistas/componentes; Vite compila el tema común Shared/UI/Assets/filament.css y la entrada JavaScript importa los activos de operaciones. La gestión utiliza el panel Filament con sidebar por módulos; ingreso en /admin. Las URLs previas /gestion redirigen al panel.
 
 La migración de operaciones conserva su nombre bajo `src/Shared/Infrastructure/Database/Migrations`; una instalación existente la reconoce como aplicada. Tras actualizar un checkout, ejecutar `composer dump-autoload --optimize --strict-psr --no-scripts` y limpiar cachés de configuración/rutas/vistas. Las pruebas de regresión cubren descubrimiento, factory/autenticación y ausencia de una segunda aplicación de esa migración.

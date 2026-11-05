@@ -61,4 +61,27 @@ Ubicación histórica bajo app sustituida por DEC-2026-11-04-06. Se conservan la
 - Alcance y consecuencias: refactorización de ubicación/autoload; sin cambiar reglas de negocio, versiones de dependencias, identificadores ni datos. La evidencia de decisiones previas se conserva marcada como histórica.
 - Recursos: actualizar kit 1.1.0 y skills locales, registrar source_root=src y source_root_override=false. Las fuentes adicionales/exportaciones ya pospuestas no generan otra ronda de preguntas ni cambian esta autorización.
 
+## DEC-2026-11-04-07 — Destinos por cliente y conservación histórica en RF-002
+
+- Fecha y estado: 2026-11-04, implementación autorizada expresamente por el usuario para RF-002, una tarea por vez.
+- Fuente: RF02 de SRS-2026-11-04 y pedido posterior «ok, implementa» tras concretar el alcance de múltiples domicilios y selección en pedidos/entregas.
+- Decisión técnica: ClientesAdministracion administra direcciones con etiqueta, domicilio, localidad y provincia obligatorios; código postal, país y referencias opcionales. clients.manage permite alta/consulta/edición y desactivación sin borrado. La desactivación retira el domicilio de nuevas selecciones; no modifica ni revoca las copias ya confirmadas.
+- Integración: DeliveryAddresses es el contrato publicado de lectura/resolución. Ventas e inventario lo consumen sin consultar tablas internas de Clientes. Al seleccionar se comprueba pertenencia al cliente y estado activo en servidor; vendedores y depósito consultan destinos con sus permisos existentes sin acceso al crédito.
+- Historia: el pedido guarda copia de su destino al confirmar. Cada despacho conserva la copia utilizada en el contenido firmado; puede usar la copia del pedido o elegir explícitamente otro domicilio activo del mismo cliente. Editar un domicilio no cambia pedidos ni movimientos anteriores.
+- Compatibilidad: pedidos anteriores o nuevos con destino por definir conservan null. Un despacho normal exige resolver el destino antes de confirmar; los retiros de propietarios identificados pueden carecer de destino externo, manteniendo autorización y auditoría. No se inventan domicilios ni se reescriben firmas previas.
+- Reintentos: identificar la selección por ID dentro del digest y resolver el resultado anterior antes de volver a leer un domicilio editable. Cuando no se envía una dirección, se conserva el formato previo de los digests para recuperar operaciones históricas.
+- Alternativas: enlazar pedidos/despachos al domicilio actual o actualizar retrospectivamente sus destinos cambiaría el historial. Se eligen copias por operación y cambios explícitos para entregas nuevas.
+- Límites: no agrega mapas, rutas, remitos, facturación ni un módulo logístico completo; esos requisitos mantienen sus tareas. Las pruebas locales usan SQLite y no acreditan otro motor ni carga productiva.
+
+## DEC-2026-11-04-08 — Filament como interfaz común y continuidad de las RF
+
+- Fecha y fuente: 2026-11-04, el usuario pidió el mismo estilo Filament para todo, con panel izquierdo organizado, y seguir implementando RF desde esa base.
+- Decisión: interfaz común dentro del panel admin, sidebar nativo con grupos Comercial, Fábrica y Administración, componentes de la versión instalada y tema compartido compatible con claro/oscuro y tamaños adaptables. AGENTS.md conserva esta regla para implementaciones posteriores.
+- Organización: clientes y pedidos en Comercial; catálogo, producción, stock y despachos en Fábrica; autorizaciones, usuarios, roles y auditoría en Administración. La visibilidad y el acceso directo dependen de permisos existentes, sin privilegios por persona.
+- Integración: las vistas/controladores propios siguen en src/UI y usan layout/componentes de Filament; las escrituras siguen delegando en Application. Dashboard Inicio conecta módulos, sin datos comerciales inventados ni widgets promocionales del framework.
+- Compatibilidad: rutas canónicas /admin y redirecciones desde /gestion; POST/PUT preservan método/cuerpo mediante 307 y vuelven a pasar por autorización/validación. No se modifica el esquema de negocio ni sus datos.
+- Alcance: UI-001 reorganiza y unifica capacidades existentes; no acredita entrega de RF futuras. La solicitud autoriza continuar las RF según el plan, una tarea por vez, manteniendo evidencia y límites expresamente pospuestos.
+- Alternativa: conservar un dashboard Filament con pantallas externas de otro aspecto. Se adopta el panel y su tema como marco común para la gestión.
+- Verificación: suite y build del producto, más revisión visual. UI-001 conserva PARCIAL mientras la comprobación visual completa no pueda realizarse; no se confunde HTML aprobado con aceptación humana ni ergonomía industrial.
+
 Para decisiones posteriores usar [la plantilla](../plantillas/decision.md), conservar historial, fuente, alternativas y alcance. Las exclusiones explícitas se identifican con `DEC-AAAA-MM-DD-NN` en Fuente de las tareas afectadas.

@@ -18,6 +18,29 @@ El estado inicial era un esqueleto sin procesos comerciales. El corte INV-001 in
 
 ## Tareas
 
+### [PARCIAL] UI-001 — Unificar la gestión en el panel Filament con navegación lateral por módulos
+
+- **Capa:** SOLICITADO
+- **Fuente:** pedido del usuario del 2026-11-04 de usar el mismo estilo Filament para todo, con panel izquierdo organizado, y continuar las RF desde esa base; DEC-2026-11-04-08
+- **Contexto propietario:** UI de Acceso, ClientesAdministracion e InventarioTrazabilidad; composición del panel
+- **Dependencias:** ACC-001, INV-001, RF-001, RF-002
+- **Alcance:** integrar las pantallas existentes al shell, tema y componentes nativos de Filament; agrupar navegación y separar accesos a clientes, pedidos, catálogo, producción, stock, despachos, autorizaciones, auditoría, usuarios y roles. Mantener URLs previas mediante redirecciones y conservar permisos/escrituras de negocio.
+- **Fuera de alcance:** cambiar reglas comerciales, incorporar dependencias o declarar completas otras RF por reorganizar su interfaz.
+- **Invariantes:** sidebar izquierdo consistente, navegación por permisos, rutas directas protegidas, continuidad de formularios y núcleo independiente del framework.
+- **Contratos y archivos previstos:** AdminPanelProvider, rutas y middleware; layout/componentes compartidos en src/Shared/UI, tema Vite, vistas/controladores de los contextos y pruebas HTTP/UI pertinentes; reglas y documentación del proyecto.
+- **Criterios de aceptación:** todas las pantallas de gestión comparten sidebar y componentes Filament; módulos accesibles según permisos, aspecto adaptable y tema claro/oscuro coherente; formularios y datos de RF-001/RF-002/inventario siguen funcionando; enlaces previos redirigen al módulo correspondiente; suite, build y revisión visual verificadas.
+- **Responsable:** Codex
+- **Fecha de inicio:** 2026-11-04
+- **Última actualización:** 2026-11-04
+- **Próximo paso:** completar la revisión visual de escritorio/móvil y claro/oscuro con una sesión accesible. La integración y pruebas de código están terminadas; conservar Filament al continuar cada RF por separado.
+- **Evidencia actual:** integración implementada sobre Filament 5.11.0 y Livewire 4.4.8, sin modificar dependencias ni reglas comerciales:
+  - Dashboard Inicio propio, marca SIMON SRL y accesos por módulos; raíz redirige al panel. Sidebar nativo izquierdo, colapsable y agrupado en Comercial, Fábrica y Administración. Se retira el widget informativo del framework de la pantalla de trabajo.
+  - Todas las pantallas de clientes/direcciones, usuarios/roles y operaciones comparten el layout nativo Filament. Secciones, campos, selectores, casillas, enlaces y botones usan componentes nativos mediante adaptadores Blade compartidos. Tema Vite en src/Shared/UI/Assets/filament.css; JavaScript de operaciones conserva sus selectores y actualización. Se elimina la hoja de estilos independiente anterior.
+  - Accesos separados a pedidos, catálogo, producción, stock, despachos, autorizaciones y auditoría; usuarios y roles tienen pantallas propias. Cada módulo y fragmento de refresco valida permisos, además de los controles existentes en las escrituras. La navegación oculta módulos no autorizados. Se mantiene captura manual y altura de botones operativos de 48 px; la comprobación computada y ergonomía siguen pendientes en RNF-002.
+  - URLs canónicas bajo /admin; los nombres de rutas se conservan. GET anteriores bajo /gestion redirigen conservando parámetros; POST/PUT usan 307 para conservar método y cuerpo hacia los controles canónicos. Las sesiones incorporan AuthenticateSession y rechazan escrituras tras cambiar la contraseña. Locale del panel en español y tema claro/oscuro nativo.
+  - Regresión final: php vendor/phpunit/phpunit/phpunit aprobó 52 pruebas y 670 aserciones. Seis pruebas nuevas verifican sidebar/controles renderizados en 16 pantallas, casillas y asignaciones, separación de módulos, visibilidad por vendedor, accesos directos, refresco por sección, enlaces previos e invalidación de sesión. Se conservan RF-001, RF-002 y los recorridos de inventario. Pint, npm.cmd run build, node --check y git diff --check aprobados. migrate --pretend informa Nothing to migrate; no se cambian datos ni esquema.
+  - Revisión visual incompleta: se observó el acceso nativo en español y modo oscuro en el navegador integrado. Las credenciales disponibles no permitieron acceder allí; no se restablecieron para esta revisión. Computer Use se detuvo al no poder determinar con suficiente confianza la URL actual de Chrome, por lo que no se siguió automatizando el navegador. No se acredita revisión visual del dashboard, formularios, modo móvil ni ergonomía; UI-001 conserva PARCIAL por esa verificación pendiente.
+
 ### [PENDIENTE] RNF-001 — Responder búsquedas históricas de lotes y partidas en un máximo de 2 segundos
 
 - **Capa:** SOLICITADO
@@ -50,7 +73,7 @@ El estado inicial era un esqueleto sin procesos comerciales. El corte INV-001 in
 - **Fecha de inicio:** 2026-11-04
 - **Última actualización:** 2026-11-04
 - **Próximo paso:** validar operación industrial con representantes y ampliar la verificación a las futuras pantallas/lectores
-- **Evidencia actual:** Interfaz inicial de operaciones: tipografía base 16 px, botones de 48 px, contraste alto, campos de lote/fabricación y captura manual. HTML y build verificados; no se declara prueba ergonómica con Claudia ni integración de hardware inexistente.
+- **Evidencia actual:** La interfaz inicial utilizaba base 16 px y controles de 48 px. UI-001 integra ahora operaciones en el tema y componentes nativos de Filament, manteniendo campos de lote/fabricación, captura manual y botones operativos de 48 px. HTML/build y regresión aprobados; tamaño computado de textos, contraste real, revisión visual completa, ergonomía con Claudia y hardware siguen pendientes. No se acredita ese cumplimiento por adoptar el tema.
 
 ### [PARCIAL] RNF-003 — Aplicar roles individuales y auditoría no modificable en cada alta y baja de stock
 

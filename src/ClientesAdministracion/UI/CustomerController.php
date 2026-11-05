@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Simon\ClientesAdministracion\Application\ManageAddresses;
 use Simon\ClientesAdministracion\Application\ManageCustomers;
 use Simon\Shared\UI\HandlesOperations;
 
@@ -29,12 +30,12 @@ final class CustomerController extends Controller
         return view('clientes::form', ['customer' => null]);
     }
 
-    public function show(Request $request, int $customerId, ManageCustomers $customers): View
+    public function show(Request $request, int $customerId, ManageCustomers $customers, ManageAddresses $addresses): View
     {
         $customer = $customers->profile($request->user()->id, $customerId);
         abort_if($customer === null, 404);
 
-        return view('clientes::form', ['customer' => $customer]);
+        return view('clientes::form', ['customer' => $customer, 'addresses' => $addresses->all($request->user()->id, $customerId)]);
     }
 
     public function store(Request $request, ManageCustomers $customers): RedirectResponse

@@ -1,0 +1,66 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+@source '../../../**/UI/Views/**/*.blade.php';
+
+.simon-content {
+    @apply grid min-w-0 gap-6;
+}
+
+.simon-content form {
+    @apply grid gap-5;
+}
+
+.simon-content form > .fi-btn {
+    @apply justify-self-start;
+}
+
+.simon-grid > *, .simon-section {
+    @apply min-w-0;
+}
+
+.simon-content label {
+    @apply grid gap-2 text-sm font-medium text-gray-950 dark:text-white;
+}
+
+.simon-content label:has(input[type='checkbox']) {
+    @apply flex items-center gap-3;
+}
+
+.simon-content p {
+    @apply text-sm leading-6 text-gray-600 dark:text-gray-400;
+}
+
+.simon-content h3 {
+    @apply text-base font-semibold text-gray-950 dark:text-white;
+}
+
+.simon-grid, .simon-checks {
+    @apply grid gap-5 md:grid-cols-2 xl:grid-cols-3;
+}
+
+.simon-table {
+    @apply overflow-x-auto rounded-xl border border-gray-200 dark:border-white/10;
+}
+
+.simon-table table {
+    @apply w-full divide-y divide-gray-200 text-start text-sm dark:divide-white/10;
+}
+
+.simon-table thead {
+    @apply bg-gray-50 dark:bg-white/5;
+}
+
+.simon-table th {
+    @apply px-4 py-3 text-start font-semibold text-gray-950 dark:text-white;
+}
+
+.simon-table td {
+    @apply border-t border-gray-200 px-4 py-4 align-top text-gray-700 dark:border-white/10 dark:text-gray-300;
+}
+
+.simon-section .fi-section-content {
+    @apply grid gap-5;
+}
+
+.simon-operation-form .fi-btn {
+    @apply min-h-12;
+}

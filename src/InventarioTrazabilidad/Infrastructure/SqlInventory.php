@@ -150,7 +150,7 @@ final class SqlInventory implements InventorySetup, InventoryStore, UnitOfWork
         }
     }
 
-    public function record(string $operationId, Actor $actor, string $kind, int $quantity, int $batchId, ?int $orderLineId, array $request, array $authorization = []): int
+    public function record(string $operationId, Actor $actor, string $kind, int $quantity, int $batchId, ?int $orderLineId, array $request, array $authorization = [], array $deliveryDestination = []): int
     {
         $key = config('inventory.audit_key');
 
@@ -173,6 +173,7 @@ final class SqlInventory implements InventorySetup, InventoryStore, UnitOfWork
             'batch_id' => $batchId, 'batch' => $this->stock($batchId),
             'order_line_id' => $orderLineId, 'occurred_at' => $occurredAt,
             'authorization' => $authorization,
+            'delivery_destination' => $deliveryDestination,
         ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
         $digest = hash_hmac('sha256', $head->digest."\n".$payload, $key);
         DB::table('inventory_audits')->insert(['sequence' => $sequence, 'movement_id' => $movementId, 'payload' => $payload, 'previous_digest' => $head->digest, 'digest' => $digest]);

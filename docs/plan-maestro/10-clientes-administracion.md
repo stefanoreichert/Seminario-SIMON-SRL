@@ -32,7 +32,7 @@ El estado inicial era un esqueleto sin procesos comerciales. El corte INV-001 in
 - **Responsable:** Codex
 - **Fecha de inicio:** 2026-11-04
 - **Última actualización:** 2026-11-04
-- **Próximo paso:** ninguno en RF-001; tarea cerrada. RF-002 queda pendiente hasta indicación del usuario, siguiendo la modalidad de una tarea por vez.
+- **Próximo paso:** ninguno en RF-001; tarea cerrada. Los requisitos siguientes se abordan por separado con su propia autorización.
 - **Evidencia actual:** Base previa de INV-001: CUIT normalizado único/obligatorio, alta e historial manual. Ampliación RF-001 del 2026-11-04:
   - Seis rutas de clientes: listado/búsqueda paginada, alta, ficha editable, actualización de datos comerciales y nueva observación crediticia. Acceso desde Clientes en el panel y en la navegación de gestión; operaciones enlaza el mismo módulo.
   - Nombre/CUIT obligatorios; teléfono/correo opcionales para conservar perfiles históricos sin inventar contactos. Se consultan/editan los cuatro campos. La regla de dominio valida también llamadas directas; CUIT se normaliza y su índice único rechaza duplicados al registrar/editar, permitiendo conservar el propio CUIT.
@@ -42,22 +42,30 @@ El estado inicial era un esqueleto sin procesos comerciales. El corte INV-001 in
   - Puesta al día local: copia SQLite consistente storage/app/backups/before-rf001-bbe4f89d7874.sqlite y manifiesto de conteos/huellas; migrate --pretend mostró únicamente la adición de phone/email. php artisan migrate --force --no-interaction aplicó esa migración como lote 3. Integridad SQLite y huellas/conteos de nueve tablas coinciden antes/después. La base real tenía cero clientes y observaciones; la preservación de perfiles con datos se verifica en la prueba de migración. No se crearon cuentas ni datos comerciales ficticios.
   - La verificación acredita RF-001 en SQLite local; no acredita carga productiva, MySQL operativo ni aceptación humana. Direcciones, facturación/crédito automático y demás módulos conservan sus tareas.
 
-### [PENDIENTE] RF-002 — Asociar varias direcciones de entrega a un cliente
+### [HECHO] RF-002 — Asociar varias direcciones de entrega a un cliente
 
 - **Capa:** SOLICITADO
-- **Fuente:** SRS-2026-11-04, RF02; aclaraciones posteriores SRS-ACL-2026-11-04; DEC-2026-11-04-05
+- **Fuente:** SRS-2026-11-04, RF02; aclaraciones posteriores SRS-ACL-2026-11-04; DEC-2026-11-04-05; autorización explícita del 2026-11-04 de implementar únicamente RF-002; DEC-2026-11-04-07
 - **Contexto propietario:** ClientesAdministracion (frontera propuesta)
 - **Dependencias:** RF-001
 - **Alcance:** Registrar, consultar y mantener múltiples destinos de entrega vinculados a un mismo cliente.
 - **Fuera de alcance:** Geocodificación o proveedor de mapas elegido sin una decisión del proyecto.
 - **Invariantes:** Cada dirección pertenece a su cliente; un pedido o despacho no debe recibir por error una dirección de otro cliente.
-- **Contratos y archivos previstos:** Propuesta: contrato de direcciones del cliente y resolución de destino para VentasPedidos/LogisticaPostventa; UI y pruebas de asociación.
+- **Contratos y archivos previstos:** DeliveryAddress, AddressRecords, ManageAddresses y contrato publicado DeliveryAddresses en src/ClientesAdministracion; SqlDeliveryAddresses, CustomerAddressController y vistas. Integración de RegisterOrder/OrderRegistration/SqlOrderRegistration, OrderFulfillment/MoveStock/InventoryStore y sus adaptadores; migraciones aditivas 2026_11_04_220000 y 220100; selectores en operaciones y tests/Feature/CustomerAddressesTest.php.
 - **Criterios de aceptación:** Un cliente conserva al menos dos direcciones diferenciables; se pueden consultar y actualizar sin sobrescribir las otras; los recorridos de pedido y entrega seleccionan el destino correcto. Se define cómo conservar el destino histórico si cambia una dirección.
-- **Responsable:** sin asignar
-- **Fecha de inicio:** pendiente
+- **Responsable:** Codex
+- **Fecha de inicio:** 2026-11-04
 - **Última actualización:** 2026-11-04
-- **Próximo paso:** Acordar campos de domicilio, vigencia y tratamiento de direcciones ya utilizadas.
-- **Evidencia actual:** Requisito RF02 incorporado desde la fuente conservada; sin implementación ni pruebas funcionales específicas observadas. Dependencias, contratos y casos de prueba son descomposición técnica del plan, no decisiones comerciales adicionales.
+- **Próximo paso:** ninguno en RF-002; tarea cerrada. Seleccionar con el usuario la próxima tarea, sin iniciar otro requisito automáticamente.
+- **Evidencia actual:** RF-002 implementado el 2026-11-04 bajo DEC-2026-11-04-07:
+  - Ficha del cliente con varias direcciones identificables, alta, consulta, edición y desactivación. Se prueban dos domicilios del mismo cliente y edición aislada sin modificar otros destinos ni el historial crediticio. Se conservan etiqueta, domicilio, localidad/provincia y datos opcionales; ninguna dirección se elimina desde la aplicación.
+  - Cinco rutas de direcciones y controles clients.manage en HTTP/casos de uso. Las opciones activas se consultan también con los permisos de vendedores/depósito, sin mostrar crédito. Se rechazan direcciones ajenas o inactivas en servidor, aun enviando POST directo.
+  - Selectores en pedidos/despachos: al cambiar cliente o línea se borra la selección anterior y se cancelan consultas desactualizadas. Cada pedido guarda la copia del destino seleccionado y cada despacho guarda su destino en el contenido firmado. La consulta de pedidos y el historial de movimientos muestran esas copias. Cambios posteriores del domicilio no alteran operaciones previas.
+  - Puede registrarse un pedido con destino por definir; un despacho normal debe resolverlo antes de confirmar. Un retiro de propietarios identificado puede no tener destino externo, conservando los controles administrativos y la auditoría. Las copias confirmadas siguen disponibles aunque su dirección de origen se desactive; elegir un destino nuevo exige una dirección activa del mismo cliente.
+  - Reintentos: se consulta la operación previa antes del domicilio mutable. Se verifica que editar/desactivar una dirección no duplique pedidos ni despachos. Una fixture de despacho histórico sin delivery_destination y con digest anterior conserva firma, stock/saldo y resultado al reintentar; el verificador admite firmas anteriores sin reescribirlas.
+  - Verificación: php vendor/phpunit/phpunit/phpunit aprobó 46 pruebas y 458 aserciones; incluye 16 pruebas de CustomerAddressesTest y la regresión completa de RF-001, permisos e inventario. Pint --test, npm.cmd run build, node --check y revisión estática independiente aprobados. Se verifican reversión por fallos, permisos, ownership, contenido escapado y migraciones con datos previos. No se realizó aceptación humana ni prueba visual en navegador.
+  - Base local: copia SQLite consistente storage/app/backups/before-rf002-2caf2151d133.sqlite y manifiesto de conteos/huellas antes de migrar. migrate --pretend mostró únicamente las dos adiciones de RF-002; migrate --force --no-interaction las aplicó en el lote 4. quick_check y diez tablas comparadas coinciden con sus datos previos. La base real tenía cero clientes, pedidos y movimientos: los casos con información previa se verifican en las pruebas; no se crearon datos ficticios en la base real. inventory:audit-verify conserva secuencia 0.
+  - Plan y visor actualizados. El cierre acredita RF-002 en SQLite local; MySQL operativo, carga productiva, rutas/documentos y demás módulos conservan sus alcances y tareas.
 
 ### [PARCIAL] RF-003 — Impedir despachos sin validación administrativa de facturación y crédito
 

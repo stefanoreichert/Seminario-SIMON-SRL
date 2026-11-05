@@ -21,6 +21,9 @@ interface InventoryStore
 
     public function decrease(int $batchId, int $quantity): void;
 
-    /** @param array<string, int|string|bool> $request */
-    public function record(string $operationId, Actor $actor, string $kind, int $quantity, int $batchId, ?int $orderLineId, array $request, array $authorization = []): int;
+    /**
+     * @param  array<string, int|string|bool>  $request
+     * @param  array{id?:int,customer_id?:int,label?:string,street?:string,locality?:string,province?:string,postal_code?:?string,country?:?string,references?:?string}  $deliveryDestination
+     */
+    public function record(string $operationId, Actor $actor, string $kind, int $quantity, int $batchId, ?int $orderLineId, array $request, array $authorization = [], array $deliveryDestination = []): int;
 }

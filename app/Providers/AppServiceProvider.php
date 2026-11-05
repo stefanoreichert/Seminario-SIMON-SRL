@@ -2,12 +2,16 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Simon\Acceso\Application\AccessRepository;
 use Simon\Acceso\Infrastructure\SqlAccess;
 use Simon\Acceso\UI\Console\BootstrapAccess;
+use Simon\ClientesAdministracion\Application\AddressRecords;
 use Simon\ClientesAdministracion\Application\CustomerRecords;
+use Simon\ClientesAdministracion\Application\DeliveryAddresses;
 use Simon\ClientesAdministracion\Infrastructure\SqlCustomers;
+use Simon\ClientesAdministracion\Infrastructure\SqlDeliveryAddresses;
 use Simon\InventarioTrazabilidad\Application\DispatchAuthorization;
 use Simon\InventarioTrazabilidad\Application\InventorySetup;
 use Simon\InventarioTrazabilidad\Application\InventoryStore;
@@ -36,6 +40,8 @@ class AppServiceProvider extends ServiceProvider
             OrderFulfillment::class => SqlOrderFulfillment::class,
             DispatchAuthorization::class => SqlCustomers::class,
             CustomerRecords::class => SqlCustomers::class,
+            AddressRecords::class => SqlDeliveryAddresses::class,
+            DeliveryAddresses::class => SqlDeliveryAddresses::class,
             OrderRegistration::class => SqlOrderRegistration::class,
         ];
 
@@ -49,6 +55,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Blade::anonymousComponentPath(base_path('src/Shared/UI/Views/components'), 'simon');
         $this->loadMigrationsFrom(glob(base_path('src/*/Infrastructure/Database/Migrations')) ?: []);
         $this->loadViewsFrom(base_path('src/Shared/UI/Views'), 'shared');
         $this->loadViewsFrom(base_path('src/Acceso/UI/Views'), 'acceso');

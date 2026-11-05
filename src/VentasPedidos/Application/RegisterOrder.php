@@ -10,7 +10,7 @@ final readonly class RegisterOrder
     public function __construct(private AccessPolicy $access, private OrderRegistration $orders) {}
 
     /** @param list<array{variant_id:int, quantity:int}> $lines */
-    public function handle(int $actorId, string $operationId, int $customerId, string $origin, array $lines): int
+    public function handle(int $actorId, string $operationId, int $customerId, string $origin, array $lines, ?int $deliveryAddressId = null): int
     {
         $permission = $this->access->allows($actorId, 'orders.manage') ? 'orders.manage' : 'orders.create';
         $actor = $this->access->require($actorId, $permission);
@@ -24,6 +24,10 @@ final readonly class RegisterOrder
 
         if (! in_array($origin, ['S', 'G', 'F'], true) || $lines === []) {
             throw new BusinessRuleViolation('Seleccioná un origen y al menos un artículo.');
+        }
+
+        if ($deliveryAddressId !== null && $deliveryAddressId < 1) {
+            throw new BusinessRuleViolation('La dirección de entrega no es válida.');
         }
 
         $seen = [];
@@ -40,6 +44,6 @@ final readonly class RegisterOrder
             $seen[] = $line['variant_id'];
         }
 
-        return $this->orders->register($operationId, $customerId, $actor->id, $origin, $lines);
+        return $this->orders->register($operationId, $customerId, $actor->id, $origin, $lines, $deliveryAddressId);
     }
 }

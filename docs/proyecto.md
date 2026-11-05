@@ -18,6 +18,8 @@ Raíz del código propio: `src/`; prefijo Composer/PSR-4: `Simon\\`; sin excepci
 
 Perfil de adaptación: `laravel`. Se conserva el stack existente; las herramientas Python son auxiliares de desarrollo.
 
+Interfaz común: panel Filament admin con menú lateral izquierdo, grupos Comercial/Fábrica/Administración y componentes/tema compartidos. La decisión del usuario se conserva en DEC-2026-11-04-08 y AGENTS.md; aplica a las RF posteriores, una por vez. UI-001 incorpora la integración y sus pruebas; la revisión visual completa sigue pendiente.
+
 ## Producto y requisitos recibidos
 
 El alcance aportado cubre clientes y administración, ventas/pedidos, depósito/stock/trazabilidad, logística/postventa y reportes/estadísticas. Se incluyen el máximo de 2 segundos para búsquedas históricas, la interfaz de depósito con mínimo de 14 px y el acceso por roles con auditoría no modificable de movimientos.

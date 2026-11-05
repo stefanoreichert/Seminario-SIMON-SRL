@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Simon\Acceso\Application\ManageAccess;
 use Simon\Acceso\Infrastructure\Persistence\User;
+use Simon\ClientesAdministracion\Application\ManageAddresses;
 use Simon\ClientesAdministracion\Application\ManageCustomers;
 use Simon\InventarioTrazabilidad\Application\MoveStock;
 use Simon\InventarioTrazabilidad\Application\PrepareInventory;
@@ -32,6 +33,8 @@ class FactoryOperationsTest extends TestCase
 
     private int $customerId;
 
+    private int $addressId;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -44,6 +47,7 @@ class FactoryOperationsTest extends TestCase
         $this->grant($this->seller, ['orders.create']);
         $this->variantId = app(PrepareInventory::class)->variant($this->admin->id, 'TEST-01', 'Botín', 'Negro', '40');
         $this->customerId = app(ManageCustomers::class)->register($this->admin->id, 'Cliente de prueba', '20-12345678-9', 'Saldo de cuenta corriente: pendiente de cobro');
+        $this->addressId = app(ManageAddresses::class)->save($this->admin->id, $this->customerId, null, 'Depósito de prueba', 'Calle de prueba 123', 'Posadas', 'Misiones');
     }
 
     /** @param list<string> $permissions */
@@ -72,7 +76,7 @@ class FactoryOperationsTest extends TestCase
 
     private function order(int $quantity = 10): int
     {
-        $id = app(RegisterOrder::class)->handle($this->seller->id, $this->token(), $this->customerId, 'S', [['variant_id' => $this->variantId, 'quantity' => $quantity]]);
+        $id = app(RegisterOrder::class)->handle($this->seller->id, $this->token(), $this->customerId, 'S', [['variant_id' => $this->variantId, 'quantity' => $quantity]], $this->addressId);
 
         return DB::table('business_order_lines')->where('order_id', $id)->value('id');
     }
@@ -252,6 +256,7 @@ class FactoryOperationsTest extends TestCase
         $this->assertTrue(Hash::check('long-test-password', DB::table('users')->where('id', $id)->value('password')));
         $this->assertDatabaseHas('users', ['id' => $id, 'sales_identifier' => 'G']);
         $this->actingAs(User::findOrFail($id))->get(route('access.index'))->assertForbidden();
+        $this->flushSession();
         $this->actingAs($this->seller)->post(route('access.role'), ['name' => 'Escalamiento', 'permissions' => ['access.manage']])->assertForbidden();
         $this->expectException(BusinessRuleViolation::class);
         $manager->saveUser($this->admin->id, $this->admin->id, $this->admin->name, $this->admin->email, null, null, false, []);
@@ -285,10 +290,10 @@ class FactoryOperationsTest extends TestCase
     {
         $lineId = $this->order();
         $this->receive();
-        $this->actingAs($this->admin)->get(route('access.index'))->assertOk()->assertSee('Usuarios, roles y permisos');
-        $this->get(route('operations.index'))->assertOk()->assertSee('data-refresh-url', false)->assertSee('Confirmar despacho o retiro');
+        $this->actingAs($this->admin)->get(route('access.index'))->assertOk()->assertSee('Crear usuario');
+        $this->get(route('operations.dispatch.index'))->assertOk()->assertSee('data-refresh-url', false)->assertSee('Confirmar despacho o retiro');
         $this->get(route('operations.snapshot'))->assertOk()->assertSee('Mercadería pendiente')->assertDontSee('<form', false);
-        $this->actingAs($this->seller)->get(route('operations.index'))->assertOk()->assertSee('Registrar nota de pedido')->assertDontSee('Validación administrativa');
+        $this->actingAs($this->seller)->get(route('operations.orders'))->assertOk()->assertSee('Registrar nota de pedido')->assertDontSee('Validación administrativa');
         $this->actingAs($this->seller)->post(route('operations.receive'), ['actor_id' => $this->warehouse->id])->assertForbidden();
         DB::table('users')->where('id', $this->warehouse->id)->update(['is_active' => false]);
         $this->actingAs($this->warehouse)->get(route('operations.index'))->assertForbidden();

@@ -30,13 +30,29 @@ final class OperationsController extends Controller
             $permissions[$permission] = $access->allows($request->user()->id, $permission);
         }
 
-        abort_unless(in_array(true, array_diff_key($permissions, ['access.manage' => true]), true), 403);
+        $section = $request->routeIs('operations.snapshot') ? $request->query('section', 'overview') : $request->route('section', 'overview');
+        $modules = [
+            'overview' => ['Resumen operativo', array_keys(array_diff_key($permissions, ['access.manage' => true]))],
+            'orders' => ['Pedidos', ['orders.create', 'orders.manage', 'inventory.view', 'inventory.dispatch', 'dispatch.authorize']],
+            'catalog' => ['Catálogo', ['catalog.manage', 'inventory.view']],
+            'production' => ['Producción', ['production.manage', 'inventory.view', 'inventory.receive']],
+            'stock' => ['Stock', ['inventory.view', 'inventory.receive', 'inventory.opening', 'inventory.dispatch']],
+            'dispatch' => ['Despachos', ['inventory.dispatch']],
+            'authorization' => ['Autorizaciones de despacho', ['dispatch.authorize']],
+            'audit' => ['Auditoría de movimientos', ['audit.view']],
+        ];
+        abort_unless(is_string($section) && isset($modules[$section]), 404);
+        abort_unless(array_any($modules[$section][1], fn (string $permission): bool => $permissions[$permission]), 403);
         $withStock = $permissions['inventory.view'] || $permissions['inventory.receive'] || $permissions['inventory.dispatch'] || $permissions['production.manage'] || $permissions['inventory.opening'];
         $allOrders = $permissions['orders.manage'] || $permissions['inventory.view'] || $permissions['inventory.dispatch'] || $permissions['dispatch.authorize'];
         $orders = ($allOrders || $permissions['orders.create']) ? $sales->orders($allOrders ? null : $request->user()->id) : [];
         $overview = $inventory->overview($withStock);
 
         return view($request->routeIs('operations.snapshot') ? 'inventario::balances' : 'inventario::index', [
+            'section' => $section, 'pageTitle' => $modules[$section][0],
+            'showStock' => $withStock && in_array($section, ['overview', 'stock', 'dispatch'], true),
+            'showProduction' => $withStock && in_array($section, ['overview', 'production', 'stock'], true),
+            'showOrders' => in_array($section, ['overview', 'orders', 'dispatch', 'authorization'], true),
             'withStock' => $withStock,
             ...$overview, 'permissions' => $permissions, 'customers' => $customers->customers($permissions['clients.manage']),
             'orders' => $orders, 'lines' => $sales->lines(array_map(fn (object $order): int => $order->id, $orders)),
@@ -72,10 +88,11 @@ final class OperationsController extends Controller
             'operation_id' => ['required', 'uuid'], 'customer_id' => ['required', 'integer', 'min:1'], 'origin' => ['required', 'in:S,G,F'],
             'lines' => ['required', 'array', 'min:1', 'max:100'], 'lines.*.variant_id' => ['required', 'integer', 'min:1'],
             'lines.*.quantity' => ['required', 'integer', 'min:1', 'max:1000000'],
+            'delivery_address_id' => ['nullable', 'integer', 'min:1'],
         ]);
         $lines = array_map(fn (array $line): array => ['variant_id' => (int) $line['variant_id'], 'quantity' => (int) $line['quantity']], $data['lines']);
 
-        return $this->perform(fn (): int => $orders->handle($request->user()->id, $data['operation_id'], (int) $data['customer_id'], $data['origin'], $lines), 'Pedido confirmado y numerado.');
+        return $this->perform(fn (): int => $orders->handle($request->user()->id, $data['operation_id'], (int) $data['customer_id'], $data['origin'], $lines, isset($data['delivery_address_id']) ? (int) $data['delivery_address_id'] : null), 'Pedido confirmado y numerado.');
     }
 
     public function authorizeDispatch(Request $request, ManageCustomers $customers): RedirectResponse
@@ -108,8 +125,8 @@ final class OperationsController extends Controller
 
     public function dispatch(Request $request, MoveStock $movements): RedirectResponse
     {
-        $data = $request->validate(['operation_id' => ['required', 'uuid'], 'order_line_id' => ['required', 'integer', 'min:1'], 'batch_id' => ['required', 'integer', 'min:1'], 'quantity' => ['required', 'integer', 'min:1', 'max:1000000'], 'owner_withdrawal' => ['boolean']]);
+        $data = $request->validate(['operation_id' => ['required', 'uuid'], 'order_line_id' => ['required', 'integer', 'min:1'], 'batch_id' => ['required', 'integer', 'min:1'], 'quantity' => ['required', 'integer', 'min:1', 'max:1000000'], 'owner_withdrawal' => ['boolean'], 'delivery_address_id' => ['nullable', 'integer', 'min:1']]);
 
-        return $this->perform(fn (): int => $movements->dispatch($request->user()->id, $data['operation_id'], (int) $data['order_line_id'], (int) $data['batch_id'], (int) $data['quantity'], $request->boolean('owner_withdrawal')), 'Despacho confirmado. Se actualizaron stock y pares pendientes; no se registró ningún cobro.');
+        return $this->perform(fn (): int => $movements->dispatch($request->user()->id, $data['operation_id'], (int) $data['order_line_id'], (int) $data['batch_id'], (int) $data['quantity'], $request->boolean('owner_withdrawal'), isset($data['delivery_address_id']) ? (int) $data['delivery_address_id'] : null), 'Despacho confirmado. Se actualizaron stock y pares pendientes; no se registró ningún cobro.');
     }
 }
