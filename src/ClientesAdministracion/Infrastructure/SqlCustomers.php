@@ -13,6 +13,12 @@ use Simon\Shared\Domain\BusinessRuleViolation;
 
 final class SqlCustomers implements CustomerDirectory, CustomerRecords, DispatchAuthorization
 {
+    public function identified(array $ids): array
+    {
+        return DB::table('business_customers')->whereIn('id', $ids)->get(['id', 'name', 'cuit'])
+            ->map(fn (object $customer): array => (array) $customer)->all();
+    }
+
     public function register(CustomerProfile $profile, string $creditHistory, int $actorId): int
     {
         try {

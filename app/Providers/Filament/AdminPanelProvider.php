@@ -39,9 +39,11 @@ class AdminPanelProvider extends PanelProvider
             ->navigationItems([
                 $this->module('Clientes', 'customers.index', 'Comercial', 'heroicon-o-users', ['clients.manage'], 10, 'customers.*'),
                 $this->module('Pedidos', 'operations.orders', 'Comercial', 'heroicon-o-shopping-bag', ['orders.create', 'orders.manage', 'inventory.view', 'inventory.dispatch', 'dispatch.authorize'], 20, ['operations.orders', 'orders.*']),
+                $this->module('Pendientes', 'pending.index', 'Comercial', 'heroicon-o-clipboard-document-list', ['orders.create', 'orders.manage', 'inventory.view', 'inventory.dispatch', 'dispatch.authorize'], 30, 'pending.*'),
                 $this->module('Catálogo', 'operations.catalog', 'Fábrica', 'heroicon-o-squares-2x2', ['catalog.manage', 'inventory.view'], 10),
                 $this->module('Producción', 'operations.production.index', 'Fábrica', 'heroicon-o-cog-6-tooth', ['production.manage', 'inventory.view', 'inventory.receive'], 20),
                 $this->module('Stock', 'operations.stock', 'Fábrica', 'heroicon-o-cube', ['inventory.view', 'inventory.receive', 'inventory.opening', 'inventory.dispatch'], 30),
+                $this->module('Trazabilidad', 'traceability.index', 'Fábrica', 'heroicon-o-magnifying-glass', ['inventory.view', 'inventory.dispatch', 'audit.view', 'orders.manage', 'dispatch.authorize'], 35),
                 $this->module('Despachos', 'operations.dispatch.index', 'Fábrica', 'heroicon-o-truck', ['inventory.dispatch'], 40),
                 $this->module('Autorizaciones', 'operations.authorization', 'Administración', 'heroicon-o-shield-check', ['dispatch.authorize'], 10),
                 $this->module('Usuarios', 'access.index', 'Administración', 'heroicon-o-user-circle', ['access.manage'], 20),

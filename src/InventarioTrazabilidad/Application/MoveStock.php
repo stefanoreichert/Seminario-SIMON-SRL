@@ -2,6 +2,7 @@
 
 namespace Simon\InventarioTrazabilidad\Application;
 
+use Simon\ClientesAdministracion\Application\CustomerDirectory;
 use Simon\ClientesAdministracion\Application\DeliveryAddresses;
 use Simon\InventarioTrazabilidad\Domain\MovementRules;
 use Simon\Shared\Application\AccessPolicy;
@@ -17,6 +18,8 @@ final readonly class MoveStock
         private OrderFulfillment $orders,
         private DispatchAuthorization $authorizations,
         private DeliveryAddresses $addresses,
+        private CustomerDirectory $customers,
+        private CatalogVariants $catalog,
     ) {}
 
     public function receive(int $actorId, string $operationId, int $productionId, int $quantity): int
@@ -99,10 +102,22 @@ final readonly class MoveStock
                 throw new BusinessRuleViolation('El lote no corresponde al artículo del pedido.');
             }
 
+            $customer = $this->customers->identified([$line['customer_id']])[0] ?? null;
+            $article = $this->catalog->identified([$line['variant_id']])[0] ?? null;
+
+            if ($customer === null || $article === null) {
+                throw new BusinessRuleViolation('No fue posible identificar el cliente y el artículo para conservar la trazabilidad.');
+            }
+
+            $shipment = [
+                'order' => ['id' => $line['order_id'], 'number' => $line['order_number'], 'origin' => $line['order_origin']],
+                'customer' => $customer, 'article' => $article,
+            ];
+
             $this->orders->dispatch($orderLineId, $quantity);
             $this->inventory->decrease($batchId, $quantity);
 
-            return $this->inventory->record($operationId, $actor, $ownerWithdrawal ? 'owner_withdrawal' : 'dispatch', $quantity, $batchId, $orderLineId, $request, $authorization, $destination ?? []);
+            return $this->inventory->record($operationId, $actor, $ownerWithdrawal ? 'owner_withdrawal' : 'dispatch', $quantity, $batchId, $orderLineId, $request, $authorization, $destination ?? [], $shipment);
         });
     }
 }

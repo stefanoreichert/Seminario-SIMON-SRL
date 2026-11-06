@@ -15,6 +15,12 @@ use Simon\Shared\Domain\BusinessRuleViolation;
 
 final class SqlInventory implements CatalogVariants, InventorySetup, InventoryStore, UnitOfWork
 {
+    public function identified(array $ids): array
+    {
+        return DB::table('catalog_variants')->whereIn('id', $ids)->get(['id', 'code', 'model', 'color', 'size'])
+            ->map(fn (object $variant): array => (array) $variant)->all();
+    }
+
     public function options(): array
     {
         return DB::table('catalog_variants')->orderBy('code')->limit(500)->get()->all();
@@ -163,7 +169,7 @@ final class SqlInventory implements CatalogVariants, InventorySetup, InventorySt
         }
     }
 
-    public function record(string $operationId, Actor $actor, string $kind, int $quantity, int $batchId, ?int $orderLineId, array $request, array $authorization = [], array $deliveryDestination = []): int
+    public function record(string $operationId, Actor $actor, string $kind, int $quantity, int $batchId, ?int $orderLineId, array $request, array $authorization = [], array $deliveryDestination = [], array $shipment = []): int
     {
         $key = config('inventory.audit_key');
 
@@ -179,7 +185,7 @@ final class SqlInventory implements CatalogVariants, InventorySetup, InventorySt
         ]);
         $head = DB::table('inventory_audit_head')->where('id', 1)->first();
         $sequence = $head->sequence + 1;
-        $payload = json_encode([
+        $data = [
             'sequence' => $sequence, 'movement_id' => $movementId, 'operation_id' => $operationId,
             'request_digest' => $this->requestDigest($request), 'actor_id' => $actor->id,
             'actor_name' => $actor->name, 'kind' => $kind, 'quantity' => $quantity,
@@ -187,7 +193,13 @@ final class SqlInventory implements CatalogVariants, InventorySetup, InventorySt
             'order_line_id' => $orderLineId, 'occurred_at' => $occurredAt,
             'authorization' => $authorization,
             'delivery_destination' => $deliveryDestination,
-        ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
+        ];
+
+        if ($shipment !== []) {
+            $data['shipment'] = $shipment;
+        }
+
+        $payload = json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
         $digest = hash_hmac('sha256', $head->digest."\n".$payload, $key);
         DB::table('inventory_audits')->insert(['sequence' => $sequence, 'movement_id' => $movementId, 'payload' => $payload, 'previous_digest' => $head->digest, 'digest' => $digest]);
         DB::table('inventory_audit_head')->where('id', 1)->update(['sequence' => $sequence, 'digest' => $digest]);

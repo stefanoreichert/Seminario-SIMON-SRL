@@ -4,6 +4,9 @@
     $orderOrigins = collect($orders)->mapWithKeys(fn($order) => [$order->id => $originLabels[$order->origin] ?? $order->origin]);
     $orderDestinations = collect($orders)->mapWithKeys(fn($order) => [$order->id => $order->delivery_destination]);
 @endphp
+@if($pendingProduction !== null)
+    @include('ventas::pending-summary', ['pendingReport' => $pendingProduction, 'withCustomers' => false, 'pendingPageRoute' => 'operations.production.index', 'pendingPageParams' => ['article_page' => $pendingProduction['articles']['page']]])
+@endif
 @if($section === 'orders')
 <x-filament::section heading="Notas de pedido" class="simon-section">
     @if($originFilter !== null)<p role="status">Origen seleccionado: {{ $originLabels[$originFilter] }}</p>@endif
@@ -31,6 +34,7 @@
 </tbody></table></div></x-filament::section>
 @endif
 @if($showOrders)
+<p>Este detalle corresponde a las últimas 200 notas de la vista. <x-filament::link :href="route('pending.index', ['origin' => $originFilter])">Consultar todos los pendientes por cliente y artículo</x-filament::link>.</p>
 <x-filament::section class="simon-section"><x-slot name="heading"><span>Mercadería pendiente por pedido</span></x-slot><p>Solo Confirmado y Parcial generan pares pendientes. Borrador y Anulado conservan sus artículos sin generar saldo por entregar. Las cantidades representan pares por entregar. La deuda monetaria de cuenta corriente se gestiona por separado.</p>
 <div class="simon-table"><table><thead><tr><th>Línea</th><th>Pedido</th><th>Origen</th><th>Artículo</th><th>Pedidos</th><th>Despachados</th><th>Pendientes</th><th>Destino del pedido</th></tr></thead><tbody>
 @forelse($lines as $line)<tr><td>#{{ $line->id }}</td><td>{{ $orderLabels[$line->order_id] ?? $line->order_id }}</td><td>{{ $orderOrigins[$line->order_id] ?? '' }}</td><td>{{ $variantLabels[$line->variant_id] ?? $line->variant_id }}</td><td>{{ $line->quantity }}</td><td>{{ $line->dispatched }}</td><td>{{ $line->pending }}</td><td>@include('clientes::destination', ['destination' => $orderDestinations[$line->order_id] ?? null])</td></tr>@empty<tr><td colspan="8">Sin pedidos registrados para consultar.</td></tr>@endforelse

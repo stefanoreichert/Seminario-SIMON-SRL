@@ -18,17 +18,24 @@ use Simon\InventarioTrazabilidad\Application\DispatchAuthorization;
 use Simon\InventarioTrazabilidad\Application\InventorySetup;
 use Simon\InventarioTrazabilidad\Application\InventoryStore;
 use Simon\InventarioTrazabilidad\Application\OrderFulfillment;
+use Simon\InventarioTrazabilidad\Application\TraceabilityRecords;
 use Simon\InventarioTrazabilidad\Infrastructure\SqlInventory;
+use Simon\InventarioTrazabilidad\Infrastructure\SqlTraceability;
 use Simon\InventarioTrazabilidad\UI\Console\VerifyInventoryAudit;
 use Simon\Shared\Application\AccessPolicy;
 use Simon\Shared\Application\UnitOfWork;
 use Simon\VentasPedidos\Application\DispatchableOrders;
+use Simon\VentasPedidos\Application\DispatchedOrderReferences;
 use Simon\VentasPedidos\Application\OrderQueries;
 use Simon\VentasPedidos\Application\OrderRegistration;
 use Simon\VentasPedidos\Application\OrderWorkflow;
+use Simon\VentasPedidos\Application\PendingDemand;
+use Simon\VentasPedidos\Application\PendingOrderQueries;
+use Simon\VentasPedidos\Application\QueryPendingOrders;
 use Simon\VentasPedidos\Infrastructure\SqlOrderFulfillment;
 use Simon\VentasPedidos\Infrastructure\SqlOrderRegistration;
 use Simon\VentasPedidos\Infrastructure\SqlOrderWorkflow;
+use Simon\VentasPedidos\Infrastructure\SqlPendingOrders;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -45,6 +52,8 @@ class AppServiceProvider extends ServiceProvider
             InventorySetup::class => SqlInventory::class,
             CatalogVariants::class => SqlInventory::class,
             OrderFulfillment::class => SqlOrderFulfillment::class,
+            DispatchedOrderReferences::class => SqlOrderFulfillment::class,
+            TraceabilityRecords::class => SqlTraceability::class,
             DispatchAuthorization::class => SqlCustomers::class,
             CustomerRecords::class => SqlCustomers::class,
             CustomerDirectory::class => SqlCustomers::class,
@@ -54,6 +63,8 @@ class AppServiceProvider extends ServiceProvider
             OrderQueries::class => SqlOrderRegistration::class,
             OrderWorkflow::class => SqlOrderWorkflow::class,
             DispatchableOrders::class => SqlOrderWorkflow::class,
+            PendingOrderQueries::class => SqlPendingOrders::class,
+            PendingDemand::class => QueryPendingOrders::class,
         ];
 
         foreach ($bindings as $contract => $implementation) {

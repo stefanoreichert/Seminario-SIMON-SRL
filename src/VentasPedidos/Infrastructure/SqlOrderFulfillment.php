@@ -5,10 +5,18 @@ namespace Simon\VentasPedidos\Infrastructure;
 use Illuminate\Support\Facades\DB;
 use Simon\InventarioTrazabilidad\Application\OrderFulfillment;
 use Simon\Shared\Domain\BusinessRuleViolation;
+use Simon\VentasPedidos\Application\DispatchedOrderReferences;
 use Simon\VentasPedidos\Domain\OrderStatus;
 
-final class SqlOrderFulfillment implements OrderFulfillment
+final class SqlOrderFulfillment implements DispatchedOrderReferences, OrderFulfillment
 {
+    public function forLines(array $lineIds): array
+    {
+        return DB::table('business_order_lines as lines')->join('business_orders as orders', 'orders.id', '=', 'lines.order_id')
+            ->whereIn('lines.id', $lineIds)->get(['lines.id as line_id', 'orders.id', 'orders.number', 'orders.origin', 'orders.customer_id'])
+            ->map(fn (object $row): array => (array) $row)->all();
+    }
+
     public function line(int $lineId): array
     {
         $line = DB::table('business_order_lines')->where('id', $lineId)->first();
@@ -25,6 +33,7 @@ final class SqlOrderFulfillment implements OrderFulfillment
 
         return [
             ...(array) $line, 'customer_id' => $order->customer_id,
+            'order_number' => $order->number, 'order_origin' => $order->origin,
             'delivery_destination' => $order->delivery_destination === null ? null : json_decode($order->delivery_destination, true, flags: JSON_THROW_ON_ERROR),
         ];
     }

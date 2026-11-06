@@ -17,6 +17,7 @@ use Simon\InventarioTrazabilidad\Infrastructure\SqlInventory;
 use Simon\Shared\Application\AccessPolicy;
 use Simon\Shared\UI\HandlesOperations;
 use Simon\VentasPedidos\Application\ListOrders;
+use Simon\VentasPedidos\Application\PendingDemand;
 use Simon\VentasPedidos\Application\RegisterOrder;
 use Simon\VentasPedidos\Domain\OrderOrigin;
 use Simon\VentasPedidos\UI\OrderFormData;
@@ -26,7 +27,7 @@ final class OperationsController extends Controller
 {
     use HandlesOperations;
 
-    public function index(Request $request, AccessPolicy $access, SqlInventory $inventory, SqlCustomers $customers, ListOrders $sales, OrderFormData $orderForms): View
+    public function index(Request $request, AccessPolicy $access, SqlInventory $inventory, SqlCustomers $customers, ListOrders $sales, OrderFormData $orderForms, PendingDemand $demand): View
     {
         $permissions = [];
 
@@ -59,6 +60,12 @@ final class OperationsController extends Controller
         $orderData = $mayReadOrders ? $sales->handle($request->user()->id, $originFilter) : ['orders' => [], 'lines' => []];
         $overview = $inventory->overview($withStock);
         $operationId = (string) Str::uuid();
+        $pendingProduction = null;
+
+        if ($section === 'production' && ($permissions['production.manage'] || $permissions['inventory.view'])) {
+            $pages = $request->validate(['article_page' => ['nullable', 'integer', 'min:1']]);
+            $pendingProduction = $demand->forProduction($request->user()->id, (int) ($pages['article_page'] ?? 1));
+        }
 
         return view($request->routeIs('operations.snapshot') ? 'inventario::balances' : 'inventario::index', [
             'section' => $section, 'pageTitle' => $modules[$section][0],
@@ -71,6 +78,7 @@ final class OperationsController extends Controller
             ...$orderData,
             'audits' => $permissions['audit.view'] ? $inventory->recentAudit() : [],
             'operationId' => $operationId,
+            'pendingProduction' => $pendingProduction,
             'orderForm' => $section === 'orders' && ($permissions['orders.create'] || $permissions['orders.manage']) ? $orderForms->make($request, $operationId) : null,
         ]);
     }

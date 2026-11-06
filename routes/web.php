@@ -9,9 +9,11 @@ use Simon\Acceso\UI\RequirePermission;
 use Simon\ClientesAdministracion\UI\CustomerAddressController;
 use Simon\ClientesAdministracion\UI\CustomerController;
 use Simon\InventarioTrazabilidad\UI\OperationsController;
+use Simon\InventarioTrazabilidad\UI\TraceabilityController;
 use Simon\Shared\UI\PanelLocale;
 use Simon\Shared\UI\PrivateOperations;
 use Simon\VentasPedidos\UI\OrderController;
+use Simon\VentasPedidos\UI\PendingOrdersController;
 
 Route::get('/', function () {
     return redirect()->route('filament.admin.pages.dashboard');
@@ -38,6 +40,12 @@ Route::middleware(['panel:admin', 'auth', AuthenticateSession::class, PrivateOpe
         ->middleware(RequirePermission::class.':clients.manage,orders.create,orders.manage,inventory.dispatch')->name('customers.addresses.options');
     Route::get('operaciones', [OperationsController::class, 'index'])->name('operations.index');
     Route::get('operaciones/saldos', [OperationsController::class, 'index'])->name('operations.snapshot');
+    Route::get('trazabilidad', [TraceabilityController::class, 'index'])->name('traceability.index')
+        ->middleware(RequirePermission::class.':inventory.view,inventory.dispatch,audit.view,orders.manage,dispatch.authorize');
+    Route::get('pendientes', [PendingOrdersController::class, 'index'])->name('pending.index')
+        ->middleware(RequirePermission::class.':orders.create,orders.manage,inventory.view,inventory.dispatch,dispatch.authorize');
+    Route::get('pendientes/saldos', [PendingOrdersController::class, 'index'])->name('pending.snapshot')
+        ->middleware(RequirePermission::class.':orders.create,orders.manage,inventory.view,inventory.dispatch,dispatch.authorize');
     Route::get('pedidos/{orderId}', [OrderController::class, 'show'])->whereNumber('orderId')->name('orders.show')
         ->middleware(RequirePermission::class.':orders.create,orders.manage,inventory.view,inventory.dispatch,dispatch.authorize');
     Route::put('pedidos/{orderId}', [OrderController::class, 'update'])->whereNumber('orderId')->name('orders.update')
