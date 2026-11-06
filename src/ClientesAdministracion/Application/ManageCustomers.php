@@ -5,10 +5,11 @@ namespace Simon\ClientesAdministracion\Application;
 use Simon\ClientesAdministracion\Domain\CustomerProfile;
 use Simon\Shared\Application\AccessPolicy;
 use Simon\Shared\Domain\BusinessRuleViolation;
+use Simon\VentasPedidos\Application\DispatchableOrders;
 
 final readonly class ManageCustomers
 {
-    public function __construct(private AccessPolicy $access, private CustomerRecords $customers) {}
+    public function __construct(private AccessPolicy $access, private CustomerRecords $customers, private DispatchableOrders $orders) {}
 
     public function register(int $actorId, string $name, string $cuit, string $creditHistory, ?string $phone = null, ?string $email = null): int
     {
@@ -66,6 +67,10 @@ final readonly class ManageCustomers
 
         if (trim($conditions) === '') {
             throw new BusinessRuleViolation('Administración debe registrar las condiciones del despacho.');
+        }
+
+        if (! $this->orders->dispatchable($orderId)) {
+            throw new BusinessRuleViolation('Solo se pueden autorizar despachos de pedidos confirmados o parciales.');
         }
 
         $this->customers->authorize($orderId, $actorId, $billing, $credit, trim($conditions));

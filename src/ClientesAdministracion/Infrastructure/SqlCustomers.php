@@ -5,12 +5,13 @@ namespace Simon\ClientesAdministracion\Infrastructure;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use Simon\ClientesAdministracion\Application\CustomerDirectory;
 use Simon\ClientesAdministracion\Application\CustomerRecords;
 use Simon\ClientesAdministracion\Domain\CustomerProfile;
 use Simon\InventarioTrazabilidad\Application\DispatchAuthorization;
 use Simon\Shared\Domain\BusinessRuleViolation;
 
-final class SqlCustomers implements CustomerRecords, DispatchAuthorization
+final class SqlCustomers implements CustomerDirectory, CustomerRecords, DispatchAuthorization
 {
     public function register(CustomerProfile $profile, string $creditHistory, int $actorId): int
     {

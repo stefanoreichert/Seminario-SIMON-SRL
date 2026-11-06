@@ -11,6 +11,7 @@ use Simon\ClientesAdministracion\UI\CustomerController;
 use Simon\InventarioTrazabilidad\UI\OperationsController;
 use Simon\Shared\UI\PanelLocale;
 use Simon\Shared\UI\PrivateOperations;
+use Simon\VentasPedidos\UI\OrderController;
 
 Route::get('/', function () {
     return redirect()->route('filament.admin.pages.dashboard');
@@ -37,6 +38,12 @@ Route::middleware(['panel:admin', 'auth', AuthenticateSession::class, PrivateOpe
         ->middleware(RequirePermission::class.':clients.manage,orders.create,orders.manage,inventory.dispatch')->name('customers.addresses.options');
     Route::get('operaciones', [OperationsController::class, 'index'])->name('operations.index');
     Route::get('operaciones/saldos', [OperationsController::class, 'index'])->name('operations.snapshot');
+    Route::get('pedidos/{orderId}', [OrderController::class, 'show'])->whereNumber('orderId')->name('orders.show')
+        ->middleware(RequirePermission::class.':orders.create,orders.manage,inventory.view,inventory.dispatch,dispatch.authorize');
+    Route::put('pedidos/{orderId}', [OrderController::class, 'update'])->whereNumber('orderId')->name('orders.update')
+        ->middleware(RequirePermission::class.':orders.create,orders.manage');
+    Route::post('pedidos/{orderId}/estado', [OrderController::class, 'transition'])->whereNumber('orderId')->name('orders.transition')
+        ->middleware(RequirePermission::class.':orders.create,orders.manage');
     foreach (['pedidos' => ['orders', 'operations.orders'], 'catalogo' => ['catalog', 'operations.catalog'], 'produccion' => ['production', 'operations.production.index'], 'stock' => ['stock', 'operations.stock'], 'despachos' => ['dispatch', 'operations.dispatch.index'], 'autorizaciones' => ['authorization', 'operations.authorization'], 'auditoria' => ['audit', 'operations.audit']] as $path => [$section, $name]) {
         Route::get($path, [OperationsController::class, 'index'])->defaults('section', $section)->name($name);
     }

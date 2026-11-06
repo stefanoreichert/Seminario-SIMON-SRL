@@ -5,6 +5,7 @@ namespace Simon\VentasPedidos\Infrastructure;
 use Illuminate\Support\Facades\DB;
 use Simon\InventarioTrazabilidad\Application\OrderFulfillment;
 use Simon\Shared\Domain\BusinessRuleViolation;
+use Simon\VentasPedidos\Domain\OrderStatus;
 
 final class SqlOrderFulfillment implements OrderFulfillment
 {
@@ -18,7 +19,7 @@ final class SqlOrderFulfillment implements OrderFulfillment
 
         $order = DB::table('business_orders')->where('id', $line->order_id)->first();
 
-        if ($order === null || ! in_array($order->status, ['Confirmado', 'Parcial'], true)) {
+        if ($order === null || ! OrderStatus::from($order->status)->acceptsDispatch()) {
             throw new BusinessRuleViolation('El pedido no admite despachos en su estado actual.');
         }
 
@@ -39,6 +40,7 @@ final class SqlOrderFulfillment implements OrderFulfillment
         }
 
         $pending = DB::table('business_order_lines')->where('order_id', $line['order_id'])->whereColumn('dispatched', '<', 'quantity')->exists();
-        DB::table('business_orders')->where('id', $line['order_id'])->update(['status' => $pending ? 'Parcial' : 'Entregado']);
+        $status = OrderStatus::from(DB::table('business_orders')->where('id', $line['order_id'])->value('status'))->afterDispatch($pending);
+        DB::table('business_orders')->where('id', $line['order_id'])->update(['status' => $status->value, 'revision' => DB::raw('revision + 1')]);
     }
 }

@@ -28,6 +28,11 @@ class OrderOriginsTest extends TestCase
 
     private int $variantId;
 
+    private int $nextQuantity = 7;
+
+    /** @var array<string,int> */
+    private array $quantitiesByToken = [];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -56,13 +61,16 @@ class OrderOriginsTest extends TestCase
     {
         return [
             'operation_id' => (string) Str::uuid(), 'customer_id' => $this->customerId, 'origin' => $origin,
-            'lines' => [['variant_id' => $this->variantId, 'quantity' => 7]],
+            'lines' => [['variant_id' => $this->variantId, 'quantity' => $this->nextQuantity++]],
         ];
     }
 
     private function order(User $actor, string $origin, ?string $token = null): int
     {
-        return app(RegisterOrder::class)->handle($actor->id, $token ?? (string) Str::uuid(), $this->customerId, $origin, [['variant_id' => $this->variantId, 'quantity' => 7]]);
+        $token ??= (string) Str::uuid();
+        $quantity = $this->quantitiesByToken[$token] ??= $this->nextQuantity++;
+
+        return app(RegisterOrder::class)->handle($actor->id, $token, $this->customerId, $origin, [['variant_id' => $this->variantId, 'quantity' => $quantity]]);
     }
 
     public function test_each_origin_is_registered_and_retrieved_with_its_correct_label(): void

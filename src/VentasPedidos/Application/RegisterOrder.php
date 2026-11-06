@@ -12,7 +12,7 @@ final readonly class RegisterOrder
     public function __construct(private AccessPolicy $access, private OrderRegistration $orders) {}
 
     /** @param list<array{variant_id:int, quantity:int}> $lines */
-    public function handle(int $actorId, string $operationId, int $customerId, string $origin, array $lines, ?int $deliveryAddressId = null): int
+    public function handle(int $actorId, string $operationId, int $customerId, string $origin, array $lines, ?int $deliveryAddressId = null, bool $asDraft = false): int
     {
         $permission = $this->access->allows($actorId, 'orders.manage') ? 'orders.manage' : 'orders.create';
         $actor = $this->access->require($actorId, $permission);
@@ -32,6 +32,6 @@ final readonly class RegisterOrder
 
         $orderLines = new OrderLines($lines);
 
-        return $this->orders->register($operationId, $customerId, $actor->id, $orderOrigin->value, $orderLines->items, $deliveryAddressId);
+        return $this->orders->register($operationId, $customerId, $actor->id, $orderOrigin->value, $orderLines->items, $deliveryAddressId, $asDraft);
     }
 }

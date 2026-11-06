@@ -8,6 +8,7 @@ use Simon\Acceso\Application\AccessRepository;
 use Simon\Acceso\Infrastructure\SqlAccess;
 use Simon\Acceso\UI\Console\BootstrapAccess;
 use Simon\ClientesAdministracion\Application\AddressRecords;
+use Simon\ClientesAdministracion\Application\CustomerDirectory;
 use Simon\ClientesAdministracion\Application\CustomerRecords;
 use Simon\ClientesAdministracion\Application\DeliveryAddresses;
 use Simon\ClientesAdministracion\Infrastructure\SqlCustomers;
@@ -21,10 +22,13 @@ use Simon\InventarioTrazabilidad\Infrastructure\SqlInventory;
 use Simon\InventarioTrazabilidad\UI\Console\VerifyInventoryAudit;
 use Simon\Shared\Application\AccessPolicy;
 use Simon\Shared\Application\UnitOfWork;
+use Simon\VentasPedidos\Application\DispatchableOrders;
 use Simon\VentasPedidos\Application\OrderQueries;
 use Simon\VentasPedidos\Application\OrderRegistration;
+use Simon\VentasPedidos\Application\OrderWorkflow;
 use Simon\VentasPedidos\Infrastructure\SqlOrderFulfillment;
 use Simon\VentasPedidos\Infrastructure\SqlOrderRegistration;
+use Simon\VentasPedidos\Infrastructure\SqlOrderWorkflow;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -43,10 +47,13 @@ class AppServiceProvider extends ServiceProvider
             OrderFulfillment::class => SqlOrderFulfillment::class,
             DispatchAuthorization::class => SqlCustomers::class,
             CustomerRecords::class => SqlCustomers::class,
+            CustomerDirectory::class => SqlCustomers::class,
             AddressRecords::class => SqlDeliveryAddresses::class,
             DeliveryAddresses::class => SqlDeliveryAddresses::class,
             OrderRegistration::class => SqlOrderRegistration::class,
             OrderQueries::class => SqlOrderRegistration::class,
+            OrderWorkflow::class => SqlOrderWorkflow::class,
+            DispatchableOrders::class => SqlOrderWorkflow::class,
         ];
 
         foreach ($bindings as $contract => $implementation) {

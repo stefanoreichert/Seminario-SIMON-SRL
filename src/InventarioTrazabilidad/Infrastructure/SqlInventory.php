@@ -15,6 +15,11 @@ use Simon\Shared\Domain\BusinessRuleViolation;
 
 final class SqlInventory implements CatalogVariants, InventorySetup, InventoryStore, UnitOfWork
 {
+    public function options(): array
+    {
+        return DB::table('catalog_variants')->orderBy('code')->limit(500)->get()->all();
+    }
+
     public function missing(array $variantIds): array
     {
         $existing = DB::table('catalog_variants')->whereIn('id', $variantIds)->pluck('id')->all();
@@ -55,7 +60,7 @@ final class SqlInventory implements CatalogVariants, InventorySetup, InventorySt
     public function overview(bool $withStock = true): array
     {
         return [
-            'variants' => DB::table('catalog_variants')->orderBy('code')->limit(500)->get()->all(),
+            'variants' => $this->options(),
             'production' => $withStock ? DB::table('production_batches')->where('in_process', '>', 0)->orderByDesc('id')->limit(500)->get()->all() : [],
             'stock' => $withStock ? DB::table('inventory_batches')->where('quantity', '>', 0)->orderByDesc('id')->limit(500)->get()->all() : [],
         ];

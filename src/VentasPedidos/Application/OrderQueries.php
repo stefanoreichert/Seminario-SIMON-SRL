@@ -9,7 +9,7 @@ interface OrderQueries
 
     /**
      * @param  list<int>  $orderIds
-     * @return list<object{id:int,order_id:int,variant_id:int,quantity:int,dispatched:int,customer_id:int,delivery_destination:?array}>
+     * @return list<object{id:int,order_id:int,variant_id:int,quantity:int,dispatched:int,pending:int,status:string,customer_id:int,delivery_destination:?array}>
      */
     public function lines(array $orderIds): array;
 }

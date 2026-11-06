@@ -32,7 +32,7 @@ El [registro de requisitos y alcance](plan-maestro/02-requisitos-y-alcance.md) c
 
 Precisar permisos por operación, reglas de crédito/facturación, identidad/estados de pedidos, fuentes de producción/costos, semántica de saldos y trazabilidad, dispositivos, documentos y métricas. Validar aplicabilidad de formularios y cómputo del plazo de devoluciones antes de implementar. Faltan también motor/entorno de producción y condiciones del ensayo de rendimiento.
 
-SRS-ACL-2026-11-04 resolvió las reglas del corte actual y pospuso reportes, hojas de ruta y exportaciones. INI-002 fija contratos para ese corte. Duplicados comerciales, edición tras parciales y detalles de módulos futuros quedan registrados sin repetir preguntas ni bloquear la operación seleccionada.
+SRS-ACL-2026-11-04 resolvió las reglas del corte actual y pospuso reportes, hojas de ruta y exportaciones. INI-002 fija contratos para ese corte. DEC-2026-11-05-11 resuelve por delegación los duplicados comerciales activos, la edición solo de borradores y la anulación del saldo tras parciales, conservando entregas. Los detalles de módulos futuros mantienen sus tareas.
 
 ## Alcance de esta preparación
 

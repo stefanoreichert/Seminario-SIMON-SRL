@@ -101,7 +101,9 @@ final class OperationsController extends Controller
         $data = $request->validated();
         $lines = array_map(fn (array $line): array => ['variant_id' => (int) $line['variant_id'], 'quantity' => (int) $line['quantity']], $data['lines']);
 
-        return $this->perform(fn (): int => $orders->handle($request->user()->id, $data['operation_id'], (int) $data['customer_id'], $data['origin'], $lines, isset($data['delivery_address_id']) ? (int) $data['delivery_address_id'] : null), 'Pedido confirmado: se guardaron todos sus artículos.', route('operations.orders', ['origin' => $data['origin']]));
+        $asDraft = ($data['intent'] ?? 'confirm') === 'draft';
+
+        return $this->perform(fn (): int => $orders->handle($request->user()->id, $data['operation_id'], (int) $data['customer_id'], $data['origin'], $lines, isset($data['delivery_address_id']) ? (int) $data['delivery_address_id'] : null, $asDraft), $asDraft ? 'Borrador guardado. Todavía no genera pares pendientes ni admite despachos.' : 'Pedido confirmado: se guardaron todos sus artículos.', route('operations.orders', ['origin' => $data['origin']]));
     }
 
     public function authorizeDispatch(Request $request, ManageCustomers $customers): RedirectResponse

@@ -12,7 +12,7 @@
         <thead><tr><th>Pedido</th><th>Origen</th><th>Estado</th><th>Dirección de entrega</th></tr></thead>
         <tbody>
         @forelse($orders as $order)
-            <tr><td>{{ $order->number }}</td><td><x-filament::badge>{{ $orderOrigins[$order->id] }}</x-filament::badge></td><td>{{ $order->status }}</td><td>@include('clientes::destination', ['destination' => $order->delivery_destination])</td></tr>
+            <tr><td><x-filament::link :href="route('orders.show', $order->id)">{{ $order->number }}</x-filament::link></td><td><x-filament::badge>{{ $orderOrigins[$order->id] }}</x-filament::badge></td><td>{{ $order->status }}</td><td>@include('clientes::destination', ['destination' => $order->delivery_destination])</td></tr>
         @empty
             <tr><td colspan="4">No hay notas de pedido para esta consulta.</td></tr>
         @endforelse
@@ -31,9 +31,9 @@
 </tbody></table></div></x-filament::section>
 @endif
 @if($showOrders)
-<x-filament::section class="simon-section"><x-slot name="heading"><span>Mercadería pendiente por pedido</span></x-slot><p>Las cantidades representan pares por entregar. La deuda monetaria de cuenta corriente se gestiona por separado.</p>
+<x-filament::section class="simon-section"><x-slot name="heading"><span>Mercadería pendiente por pedido</span></x-slot><p>Solo Confirmado y Parcial generan pares pendientes. Borrador y Anulado conservan sus artículos sin generar saldo por entregar. Las cantidades representan pares por entregar. La deuda monetaria de cuenta corriente se gestiona por separado.</p>
 <div class="simon-table"><table><thead><tr><th>Línea</th><th>Pedido</th><th>Origen</th><th>Artículo</th><th>Pedidos</th><th>Despachados</th><th>Pendientes</th><th>Destino del pedido</th></tr></thead><tbody>
-@forelse($lines as $line)<tr><td>#{{ $line->id }}</td><td>{{ $orderLabels[$line->order_id] ?? $line->order_id }}</td><td>{{ $orderOrigins[$line->order_id] ?? '' }}</td><td>{{ $variantLabels[$line->variant_id] ?? $line->variant_id }}</td><td>{{ $line->quantity }}</td><td>{{ $line->dispatched }}</td><td>{{ $line->quantity - $line->dispatched }}</td><td>@include('clientes::destination', ['destination' => $orderDestinations[$line->order_id] ?? null])</td></tr>@empty<tr><td colspan="8">Sin pedidos registrados para consultar.</td></tr>@endforelse
+@forelse($lines as $line)<tr><td>#{{ $line->id }}</td><td>{{ $orderLabels[$line->order_id] ?? $line->order_id }}</td><td>{{ $orderOrigins[$line->order_id] ?? '' }}</td><td>{{ $variantLabels[$line->variant_id] ?? $line->variant_id }}</td><td>{{ $line->quantity }}</td><td>{{ $line->dispatched }}</td><td>{{ $line->pending }}</td><td>@include('clientes::destination', ['destination' => $orderDestinations[$line->order_id] ?? null])</td></tr>@empty<tr><td colspan="8">Sin pedidos registrados para consultar.</td></tr>@endforelse
 </tbody></table></div><p>Actualizado {{ now()->format('H:i:s') }}.</p></x-filament::section>
 
 @endif

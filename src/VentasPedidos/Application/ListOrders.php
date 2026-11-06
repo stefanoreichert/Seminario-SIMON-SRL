@@ -10,7 +10,7 @@ final readonly class ListOrders
     public function __construct(private AccessPolicy $access, private OrderQueries $orders) {}
 
     /**
-     * @return array{orders:list<object{id:int,number:?string,customer_id:int,seller_id:int,origin:string,status:string,delivery_destination:?array}>,lines:list<object{id:int,order_id:int,variant_id:int,quantity:int,dispatched:int,customer_id:int,delivery_destination:?array}>}
+     * @return array{orders:list<object{id:int,number:?string,customer_id:int,seller_id:int,origin:string,status:string,delivery_destination:?array}>,lines:list<object{id:int,order_id:int,variant_id:int,quantity:int,dispatched:int,pending:int,status:string,customer_id:int,delivery_destination:?array}>}
      */
     public function handle(int $actorId, ?string $origin = null): array
     {

@@ -11,16 +11,27 @@ final readonly class OrderFormData
     public function __construct(private DeliveryAddresses $addresses) {}
 
     /**
-     * @return array{token:string,customer:string,address:string,origin:string,lines:list<array{variant_id:string,quantity:string}>,addresses:list<array{id:int,customer_id:int,label:string,street:string,locality:string,province:string,postal_code:?string,country:?string,references:?string,is_active:bool}>}
+     * @param  array<string,mixed>|null  $order
+     * @return array{revision:string,token:string,customer:string,address:string,origin:string,lines:list<array{variant_id:string,quantity:string}>,addresses:list<array{id:int,customer_id:int,label:string,street:string,locality:string,province:string,postal_code:?string,country:?string,references:?string,is_active:bool}>}
      */
-    public function make(Request $request, string $newToken): array
+    public function make(Request $request, string $newToken, ?array $order = null): array
     {
         $old = $request->session()->getOldInput();
+        if ((string) ($old['form_order_id'] ?? '') !== (string) ($order['id'] ?? '')) {
+            $old = [];
+        }
+
+        $defaults = $order === null ? [] : [
+            'customer_id' => $order['customer_id'], 'delivery_address_id' => $order['delivery_address_id'],
+            'origin' => $order['origin'], 'lines' => $order['lines'],
+        ];
+        $old = [...$defaults, ...$old];
         $token = $this->text($old['operation_id'] ?? '');
         $customer = $this->text($old['customer_id'] ?? '');
         $lines = isset($old['lines']) && is_array($old['lines']) && $old['lines'] !== [] ? array_values($old['lines']) : [['variant_id' => '', 'quantity' => '']];
 
         return [
+            'revision' => $this->text($old['revision'] ?? $order['revision'] ?? ''),
             'token' => Str::isUuid($token) ? $token : $newToken,
             'customer' => $customer, 'address' => $this->text($old['delivery_address_id'] ?? ''),
             'origin' => $this->text($old['origin'] ?? ''),

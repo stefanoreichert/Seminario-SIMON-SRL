@@ -9,12 +9,14 @@ use Simon\InventarioTrazabilidad\Application\CatalogVariants;
 use Simon\Shared\Domain\BusinessRuleViolation;
 use Simon\VentasPedidos\Application\OrderQueries;
 use Simon\VentasPedidos\Application\OrderRegistration;
+use Simon\VentasPedidos\Application\OrderWorkflow;
+use Simon\VentasPedidos\Domain\OrderStatus;
 
 final class SqlOrderRegistration implements OrderQueries, OrderRegistration
 {
-    public function __construct(private readonly DeliveryAddresses $addresses, private readonly CatalogVariants $catalog) {}
+    public function __construct(private readonly DeliveryAddresses $addresses, private readonly CatalogVariants $catalog, private readonly OrderWorkflow $workflow) {}
 
-    public function register(string $operationId, int $customerId, int $sellerId, string $origin, array $lines, ?int $deliveryAddressId = null): int
+    public function register(string $operationId, int $customerId, int $sellerId, string $origin, array $lines, ?int $deliveryAddressId = null, bool $asDraft = false): int
     {
         $identity = [$customerId, $sellerId, $origin, $lines];
 
@@ -22,10 +24,15 @@ final class SqlOrderRegistration implements OrderQueries, OrderRegistration
             $identity[] = $deliveryAddressId;
         }
 
+        if ($asDraft) {
+            $identity[] = OrderStatus::Draft->value;
+        }
+
         $digest = hash('sha256', json_encode($identity, JSON_THROW_ON_ERROR));
 
         try {
-            return DB::transaction(function () use ($operationId, $customerId, $sellerId, $origin, $lines, $digest, $deliveryAddressId): int {
+            return DB::transaction(function () use ($operationId, $customerId, $sellerId, $origin, $lines, $digest, $deliveryAddressId, $asDraft): int {
+                DB::table('inventory_audit_head')->where('id', 1)->increment('lock_revision');
                 DB::table('access_assignment_lock')->where('id', 1)->increment('revision');
                 $previous = DB::table('business_orders')->where('registration_id', $operationId)->first();
 
@@ -37,6 +44,8 @@ final class SqlOrderRegistration implements OrderQueries, OrderRegistration
                     return $previous->id;
                 }
 
+                $this->workflow->assertNoDuplicate($customerId, $lines);
+
                 if ($this->catalog->missing(array_column($lines, 'variant_id')) !== []) {
                     throw new BusinessRuleViolation('Uno de los artículos ya no existe en el catálogo. Revisá todas las líneas antes de confirmar.');
                 }
@@ -45,7 +54,7 @@ final class SqlOrderRegistration implements OrderQueries, OrderRegistration
                 $orderId = DB::table('business_orders')->insertGetId([
                     'registration_id' => $operationId, 'request_digest' => $digest,
                     'customer_id' => $customerId, 'seller_id' => $sellerId, 'origin' => $origin,
-                    'status' => 'Confirmado', 'created_at' => now(),
+                    'status' => ($asDraft ? OrderStatus::Draft : OrderStatus::Confirmed)->value, 'created_at' => now(),
                     'delivery_address_id' => $deliveryAddressId,
                     'delivery_destination' => $destination === null ? null : json_encode($destination, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE),
                 ]);
@@ -80,9 +89,10 @@ final class SqlOrderRegistration implements OrderQueries, OrderRegistration
     public function lines(array $orderIds): array
     {
         return DB::table('business_order_lines')->join('business_orders', 'business_orders.id', '=', 'business_order_lines.order_id')
-            ->whereIn('order_id', $orderIds)->select('business_order_lines.*', 'business_orders.customer_id', 'business_orders.delivery_destination')
+            ->whereIn('order_id', $orderIds)->select('business_order_lines.*', 'business_orders.customer_id', 'business_orders.delivery_destination', 'business_orders.status')
             ->get()->map(function (object $line): object {
                 $line->delivery_destination = $line->delivery_destination === null ? null : json_decode($line->delivery_destination, true, flags: JSON_THROW_ON_ERROR);
+                $line->pending = OrderStatus::from($line->status)->acceptsDispatch() ? $line->quantity - $line->dispatched : 0;
 
                 return $line;
             })->all();

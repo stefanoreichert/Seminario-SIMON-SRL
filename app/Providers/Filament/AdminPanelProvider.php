@@ -38,7 +38,7 @@ class AdminPanelProvider extends PanelProvider
             ->login()
             ->navigationItems([
                 $this->module('Clientes', 'customers.index', 'Comercial', 'heroicon-o-users', ['clients.manage'], 10, 'customers.*'),
-                $this->module('Pedidos', 'operations.orders', 'Comercial', 'heroicon-o-shopping-bag', ['orders.create', 'orders.manage', 'inventory.view', 'inventory.dispatch', 'dispatch.authorize'], 20),
+                $this->module('Pedidos', 'operations.orders', 'Comercial', 'heroicon-o-shopping-bag', ['orders.create', 'orders.manage', 'inventory.view', 'inventory.dispatch', 'dispatch.authorize'], 20, ['operations.orders', 'orders.*']),
                 $this->module('Catálogo', 'operations.catalog', 'Fábrica', 'heroicon-o-squares-2x2', ['catalog.manage', 'inventory.view'], 10),
                 $this->module('Producción', 'operations.production.index', 'Fábrica', 'heroicon-o-cog-6-tooth', ['production.manage', 'inventory.view', 'inventory.receive'], 20),
                 $this->module('Stock', 'operations.stock', 'Fábrica', 'heroicon-o-cube', ['inventory.view', 'inventory.receive', 'inventory.opening', 'inventory.dispatch'], 30),
@@ -76,10 +76,10 @@ class AdminPanelProvider extends PanelProvider
     }
 
     /** @param list<string> $permissions */
-    private function module(string $label, string $route, string $group, string $icon, array $permissions, int $sort, ?string $activePattern = null): NavigationItem
+    private function module(string $label, string $route, string $group, string $icon, array $permissions, int $sort, string|array|null $activePattern = null): NavigationItem
     {
         return NavigationItem::make($label)->url(fn (): string => route($route))->group($group)->icon($icon)->sort($sort)
-            ->isActiveWhen(fn (): bool => request()->routeIs($activePattern ?? $route))
+            ->isActiveWhen(fn (): bool => request()->routeIs(...(array) ($activePattern ?? $route)))
             ->visible(function () use ($permissions): bool {
                 if (! auth()->check()) {
                     return false;

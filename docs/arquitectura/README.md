@@ -31,6 +31,8 @@ No existe una excepción autorizada a src en este proyecto. DEC-2026-11-04-06 su
 
 Los modelos, migraciones y componentes existentes se mantienen como punto de partida. Al implementar una funcionalidad autorizada, ubicar los nuevos contratos y adaptadores y resolver sus desvíos con un alcance concreto. Para Filament, también acciones masivas, imports y relaciones que escriben deben delegar en casos de uso.
 
+RF-007 agrega OrderStatus/OrderFingerprint en Domain y ManageOrders/OrderWorkflow en Application de VentasPedidos. El adaptador SQL conserva numeración/digests históricos, coordina cambios y despachos con el bloqueo transaccional compartido y controla la revisión de la nota. Solo Borrador admite edición; Anulado conserva entregas sin generar PP. La UI permanece en Filament. ClientesAdministracion comprueba el contrato publicado DispatchableOrders antes de autorizar; CustomerDirectory/CatalogVariants suministran opciones sin consultar adaptadores internos ajenos. DEC-2026-11-05-11 conserva las reglas delegadas de estados y duplicados activos.
+
 ## Mapa preliminar de contextos
 
 Fuente: [SRS-2026-11-04, alcance y preguntas](../plan-maestro/02-requisitos-y-alcance.md). La agrupación funcional proviene del adjunto; su correspondencia con bounded contexts y los nombres de código son una propuesta técnica, no una decisión comercial confirmada.

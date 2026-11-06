@@ -1,7 +1,12 @@
-<x-filament::section heading="Registrar nota de pedido" class="simon-section">
-    <p>Agregá todos los artículos y confirmá la nota una sola vez. Si una línea tiene errores, se conserva el formulario para corregirla.</p>
-    <form class="simon-operation-form" method="post" action="{{ route('operations.order') }}" data-order-form data-address-selector data-empty-address-label="Definir destino al despachar" data-max-lines="{{ \Simon\VentasPedidos\Domain\OrderLines::MAX_LINES }}">
+<x-filament::section :heading="isset($editingOrder) ? 'Editar borrador' : 'Registrar nota de pedido'" class="simon-section">
+    <p>Agregá todos los artículos y guardá la nota una sola vez. Si una línea tiene errores, se conserva el formulario para corregirla. Un borrador no genera pares pendientes hasta su confirmación.</p>
+    <form class="simon-operation-form" method="post" action="{{ isset($editingOrder) ? route('orders.update', $editingOrder['id']) : route('operations.order') }}" data-order-form data-address-selector data-empty-address-label="Definir destino al despachar" data-max-lines="{{ \Simon\VentasPedidos\Domain\OrderLines::MAX_LINES }}">
         @csrf
+        @if(isset($editingOrder))
+            @method('PUT')
+            <x-simon::input type="hidden" name="form_order_id" :value="$editingOrder['id']" />
+            <x-simon::input type="hidden" name="revision" :value="$orderForm['revision']" />
+        @endif
         <x-simon::input type="hidden" name="operation_id" value="{{ $orderForm['token'] }}" />
         <div class="simon-grid">
             <div>
@@ -59,7 +64,12 @@
         <p data-line-count role="status" aria-live="polite">{{ count($orderForm['lines']) }} líneas de artículos. Máximo: {{ \Simon\VentasPedidos\Domain\OrderLines::MAX_LINES }}.</p>
         <div class="flex flex-wrap gap-3">
             <x-filament::button type="button" color="gray" icon="heroicon-o-plus" data-add-line :disabled="count($orderForm['lines']) >= \Simon\VentasPedidos\Domain\OrderLines::MAX_LINES">Agregar otro artículo</x-filament::button>
-            <x-filament::button type="submit" icon="heroicon-o-check">Confirmar pedido</x-filament::button>
+            @if(isset($editingOrder))
+                <x-filament::button type="submit" icon="heroicon-o-check">Guardar cambios del borrador</x-filament::button>
+            @else
+                <x-filament::button type="submit" name="intent" value="draft" color="gray">Guardar borrador</x-filament::button>
+                <x-filament::button type="submit" name="intent" value="confirm" icon="heroicon-o-check">Confirmar pedido</x-filament::button>
+            @endif
         </div>
         <x-filament::link href="{{ route('operations.orders') }}">Iniciar una nota nueva</x-filament::link>
     </form>

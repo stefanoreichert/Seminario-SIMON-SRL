@@ -25,6 +25,8 @@ final class OrderRequest extends FormRequest
     {
         return [
             'operation_id' => ['required', 'uuid'],
+            'intent' => ['nullable', 'string', Rule::in(['confirm', 'draft'])],
+            'revision' => [$this->routeIs('orders.update') ? 'required' : 'nullable', $this->integerInput(), 'integer', 'min:0'],
             'customer_id' => ['required', $this->integerInput(), 'integer', 'min:1'],
             'origin' => ['required', 'string', Rule::in(array_keys(OrderOrigin::labels()))],
             'delivery_address_id' => ['nullable', $this->integerInput(), 'integer', 'min:1'],
