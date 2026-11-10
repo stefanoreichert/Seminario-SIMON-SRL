@@ -16,7 +16,12 @@
   const states = new Set(data.states);
   const normalize = (value) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   const viewport = $("viewport");
-  let selected = null, chain = null, visible = [], positions = new Map();
+  let selected = null, chain = null, visible = [], positions = new Map(), imageIndex = 0, stepImage = () => {};
+  let entering = new Set(), changed = new Set(), detailTask = null;
+  const motionClasses = (node, id) => {node.classList.toggle("enter", entering.has(id)); node.classList.toggle("changed", changed.has(id));};
+  const slide = (node, delta) => {
+    if (typeof node.animate === "function" && matchMedia("(prefers-reduced-motion: no-preference)").matches) node.animate([{opacity: 0, transform: `translateX(${delta * 12}px)`}, {opacity: 1, transform: "none"}], {duration: 200, easing: "cubic-bezier(.2,0,0,1)"});
+  };
   let scale = 1, pan = {x: 0, y: 0}, bounds = {width: 1, height: 1}, drag = null;
   const element = (tag, text, className) => {
     const node = document.createElement(tag);
@@ -53,15 +58,16 @@
     $("states").append(button);
   });
   data.modules.forEach((module) => {const option = element("option", module.title); option.value = module.id; $("module").append(option);});
-  function transform() {
+  function transform(animated = false) {
+    $("scene").classList.toggle("glide", animated);
     $("scene").style.transform = `translate(${pan.x}px, ${pan.y}px) scale(${scale})`;
     $("zoom-label").textContent = `${Math.round(scale * 100)}%`;
   }
-  function fit() {
+  function fit(animated = false) {
     if (!visible.length) return;
     scale = Math.min(1, Math.max(.04, Math.min((viewport.clientWidth - 50) / bounds.width, (viewport.clientHeight - 50) / bounds.height)));
     pan = {x: (viewport.clientWidth - bounds.width * scale) / 2, y: (viewport.clientHeight - bounds.height * scale) / 2};
-    transform();
+    transform(animated);
   }
   function readableFrame() {
     fit();
@@ -71,18 +77,21 @@
       transform();
     }
   }
-  function zoom(factor, x = viewport.clientWidth / 2, y = viewport.clientHeight / 2) {
+  function zoom(factor, x, y) {
+    // Con coordenadas viene de la rueda, que debe seguir al gesto sin retraso.
+    const animated = x === undefined;
+    if (animated) {x = viewport.clientWidth / 2; y = viewport.clientHeight / 2;}
     const previous = scale;
     scale = Math.min(2, Math.max(.04, scale * factor));
     pan = {x: x - (x - pan.x) * scale / previous, y: y - (y - pan.y) * scale / previous};
-    transform();
+    transform(animated);
   }
-  function center(id) {
+  function center(id, animated = false) {
     const position = positions.get(id);
     if (!position) return;
     scale = Math.max(.85, scale);
     pan = {x: viewport.clientWidth / 2 - (position.x + 98) * scale, y: viewport.clientHeight / 2 - (position.y + 53) * scale};
-    transform();
+    transform(animated);
   }
   function resetFilters() {
     $("search").value = ""; $("module").value = ""; $("scope").value = "";
@@ -90,10 +99,10 @@
     chain = null;
   }
   function select(id, fromList = false, fromRelation = false) {
-    selected = id;
+    selected = id; imageIndex = 0;
     if (fromRelation) {resetFilters(); render(false);}
     else {paintSelection(); renderDetail();}
-    if (fromList || fromRelation) center(id);
+    if (fromList || fromRelation) center(id, true);
   }
   function paintSelection() {
     const related = selected ? chainIds(selected) : new Set();
@@ -129,6 +138,7 @@
         button.setAttribute("aria-label", `${task.id}, ${task.title}, ${labels[task.status]}`);
         button.title = `${task.id} · ${task.title} · ${labels[task.status]}`;
         button.append(element("span", task.id, "node-id"), element("span", task.title, "node-title"), element("span", `${labels[task.status]} · ${scopes[task.scope]}`, "node-status"));
+        motionClasses(button, task.id);
         button.addEventListener("click", () => select(task.id));
         button.addEventListener("focus", () => {if (document.activeElement.matches(":focus-visible")) center(task.id);});
         $("nodes").append(button);
@@ -171,8 +181,42 @@
     if (!ids.length) list.append(element("p", "Sin tareas con ID explícito."));
     section.append(list); return section;
   }
+  function imageGallery(images) {
+    imageIndex = Math.min(imageIndex, images.length - 1);
+    const gallery = element("div"), button = element("button", undefined, "evidence-image"), thumbnail = element("img"), caption = element("span"), counter = element("output");
+    thumbnail.alt = "";
+    button.append(thumbnail, caption);
+    button.addEventListener("click", () => $("image-viewer").showModal());
+    // Actualiza en el lugar: renderDetail perdería el foco y el scroll del panel.
+    const show = () => {
+      const image = images[imageIndex];
+      button.setAttribute("aria-label", `Ampliar imagen: ${image.alt}`);
+      thumbnail.src = image.src; caption.textContent = image.alt;
+      counter.textContent = $("image-count").textContent = `${imageIndex + 1} / ${images.length}`;
+      $("image-title").textContent = image.alt;
+      $("image-full").src = image.src; $("image-full").alt = image.alt;
+      $("image-full").parentElement.scrollTop = 0;
+    };
+    stepImage = (delta) => {imageIndex = (imageIndex + delta + images.length) % images.length; show(); slide(thumbnail, delta); slide($("image-full"), delta);};
+    const stepper = (text, label, delta) => {
+      const step = element("button", text);
+      step.setAttribute("aria-label", label);
+      step.addEventListener("click", () => stepImage(delta));
+      return step;
+    };
+    show();
+    $("image-nav").hidden = images.length < 2;
+    gallery.append(button);
+    if (images.length > 1) {
+      const nav = element("div", undefined, "evidence-nav");
+      nav.append(stepper("‹", "Imagen anterior", -1), counter, stepper("›", "Imagen siguiente", 1));
+      gallery.append(nav);
+    }
+    return gallery;
+  }
   function renderDetail() {
     document.querySelector(".workspace").classList.toggle("has-detail", Boolean(selected));
+    const newTask = selected !== detailTask; detailTask = selected;
     if (!selected) {
       $("detail").replaceChildren();
       const placeholder = element("div", undefined, "detail-placeholder");
@@ -180,6 +224,7 @@
       $("detail").append(placeholder); return;
     }
     const task = tasks.get(selected), header = element("div", undefined, "detail-header"), body = element("div", undefined, "detail-body");
+    body.classList.toggle("enter", newTask);
     const close = element("button", "Cerrar"); close.setAttribute("aria-label", "Cerrar detalle de tarea"); close.addEventListener("click", closeDetail);
     header.append(element("strong", task.id), close);
     const badge = element("span", undefined, "badge"); colorize(badge, task.status); badge.append(dot(task.status), element("span", `${labels[task.status]} · ${scopes[task.scope]}`));
@@ -188,6 +233,7 @@
     if (chain || !visible.some((item) => item.id === task.id)) body.append(element("p", chain ? `Cadena completa de ${chain}; los filtros quedan suspendidos hasta salir.` : "Esta tarea quedó fuera de los filtros actuales."));
     const actions = element("div", undefined, "detail-actions"), branch = element("button", chain ? "Salir de la cadena" : "Ver cadena completa");
     branch.addEventListener("click", () => {chain = chain ? null : task.id; render();}); actions.append(branch); body.append(actions);
+    if (task.images?.length) body.append(element("h3", "Evidencia visual"), imageGallery(task.images));
     body.append(relationSection("Requisitos", task.dependencies), relationSection("Dependientes", dependents.get(task.id)));
     for (const label of data.fieldNames) {
       body.append(element("h3", label === "Dependencias" ? "Dependencias: texto del plan" : label), element("p", task.fields[label]));
@@ -205,12 +251,15 @@
   function render(reframe = true) {
     const query = normalize($("search").value.trim()), module = $("module").value, scope = $("scope").value;
     const branch = chain ? chainIds(chain) : null;
+    // render reconstruye los nodos: solo se anima lo que recién aparece, no todo en cada filtro o actualización.
+    const previous = new Set(visible.map((task) => task.id));
     visible = data.tasks.filter((task) => branch ? branch.has(task.id) : states.has(task.status) && (!module || task.module === module) && (!scope || task.scope === scope) && (!query || normalize(`${task.id} ${task.title}`).includes(query)));
+    entering = new Set(visible.filter((task) => !previous.has(task.id)).map((task) => task.id));
     document.querySelectorAll("[data-status]").forEach((button) => button.setAttribute("aria-pressed", String(states.has(button.dataset.status))));
     $("result-count").textContent = `${visible.length} / ${data.tasks.length}`;
     $("task-list").replaceChildren();
     visible.forEach((task) => {
-      const button = element("button", undefined, "list-task"); button.dataset.task = task.id; colorize(button, task.status);
+      const button = element("button", undefined, "list-task"); button.dataset.task = task.id; colorize(button, task.status); motionClasses(button, task.id);
       const meta = element("span", undefined, "list-meta"); meta.append(dot(task.status), element("span", task.id), element("span", labels[task.status], "list-status"));
       button.append(meta, element("span", task.title, "list-title")); button.addEventListener("click", () => select(task.id, true)); $("task-list").append(button);
     });
@@ -220,7 +269,7 @@
   $("filters").addEventListener("submit", (event) => event.preventDefault());
   for (const id of ["search", "module", "scope"]) $(id).addEventListener(id === "search" ? "input" : "change", () => {chain = null; render();});
   $("reset").addEventListener("click", () => {resetFilters(); selected = null; render(); $("search").focus();});
-  $("zoom-in").addEventListener("click", () => zoom(1.3)); $("zoom-out").addEventListener("click", () => zoom(1 / 1.3)); $("fit").addEventListener("click", fit);
+  $("zoom-in").addEventListener("click", () => zoom(1.3)); $("zoom-out").addEventListener("click", () => zoom(1 / 1.3)); $("fit").addEventListener("click", () => fit(true));
   viewport.addEventListener("pointerdown", (event) => {
     if (event.target.closest("button") || event.button !== 0) return;
     drag = {id: event.pointerId, x: event.clientX, y: event.clientY, pan: {...pan}};
@@ -239,13 +288,19 @@
     const deltas = {ArrowLeft: [60, 0], ArrowRight: [-60, 0], ArrowUp: [0, 60], ArrowDown: [0, -60]};
     if (deltas[event.key]) {event.preventDefault(); pan.x += deltas[event.key][0]; pan.y += deltas[event.key][1]; transform();}
     if (["+", "=", "-"].includes(event.key)) {event.preventDefault(); zoom(event.key === "-" ? 1 / 1.3 : 1.3);}
-    if (event.key === "Home") {event.preventDefault(); fit();}
+    if (event.key === "Home") {event.preventDefault(); fit(true);}
   });
   $("help-open").addEventListener("click", () => $("help").showModal());
   const closeHelp = () => {$("help").close(); $("help-open").focus();};
   $("help-close").addEventListener("click", closeHelp); $("help-done").addEventListener("click", closeHelp);
   $("help").addEventListener("cancel", (event) => {event.preventDefault(); closeHelp();});
-  document.addEventListener("keydown", (event) => {if (event.key === "Escape" && !$("help").open && selected) {event.preventDefault(); closeDetail();}});
+  $("image-close").addEventListener("click", () => $("image-viewer").close());
+  $("image-prev").addEventListener("click", () => stepImage(-1)); $("image-next").addEventListener("click", () => stepImage(1));
+  $("image-viewer").addEventListener("keydown", (event) => {
+    const delta = {ArrowLeft: -1, ArrowRight: 1}[event.key];
+    if (delta && !$("image-nav").hidden) {event.preventDefault(); stepImage(delta);}
+  });
+  document.addEventListener("keydown", (event) => {if (event.key === "Escape" && !document.querySelector("dialog[open]") && selected) {event.preventDefault(); closeDetail();}});
   new ResizeObserver(() => selected && positions.has(selected) ? center(selected) : readableFrame()).observe(viewport);
   render();
 
@@ -262,7 +317,9 @@
     const focused = document.activeElement;
     const focusedTask = focused?.dataset.task;
     const focusedClass = focused?.classList.contains("list-task") ? ".list-task" : ".node";
+    const previousStatus = new Map(data.tasks.map((task) => [task.id, task.status]));
     data = next;
+    changed = new Set(data.tasks.filter((task) => previousStatus.has(task.id) && previousStatus.get(task.id) !== task.status).map((task) => task.id));
     document.title = `Árbol de tareas · ${data.projectName}`;
     $("project-name").textContent = data.projectName;
     tasks.clear(); dependents.clear(); fullLevels.clear();
@@ -282,6 +339,7 @@
       button.setAttribute("aria-label", `${labels[button.dataset.status]}: ${count} tareas`);
     });
     render(false);
+    changed = new Set();
     $("detail").scrollTop = previous.detailScroll;
     if (focusedTask) {
       const replacement = [...document.querySelectorAll(focusedClass)].find((node) => node.dataset.task === focusedTask);

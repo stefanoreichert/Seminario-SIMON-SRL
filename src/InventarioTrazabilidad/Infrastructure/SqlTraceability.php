@@ -16,8 +16,13 @@ final class SqlTraceability implements TraceabilityRecords
         try {
             return DB::transaction(function () use ($filter, $page): array {
                 $query = DB::table('inventory_audits as audits')->join('inventory_movements as movements', 'movements.id', '=', 'audits.movement_id')
-                    ->whereIn('movements.kind', ['dispatch', 'owner_withdrawal'])
-                    ->when($filter->lot !== null, fn ($query) => $query->where('audits.payload->batch->lot', $filter->lot))
+                    ->whereIn('movements.kind', ['dispatch', 'owner_withdrawal']);
+
+                if ((clone $query)->whereRaw('json_valid(audits.payload) = 0')->exists()) {
+                    throw new JsonException('El historial contiene un registro JSON inválido.');
+                }
+
+                $query->when($filter->lot !== null, fn ($query) => $query->where('audits.payload->batch->lot', $filter->lot))
                     ->when($filter->manufacturedFrom !== null, fn ($query) => $query->where('audits.payload->batch->manufactured_on', '>=', $filter->manufacturedFrom))
                     ->when($filter->manufacturedTo !== null, fn ($query) => $query->where('audits.payload->batch->manufactured_on', '<=', $filter->manufacturedTo));
                 $total = (clone $query)->count();

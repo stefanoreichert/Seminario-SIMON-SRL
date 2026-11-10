@@ -177,7 +177,7 @@ final class SqlInventory implements CatalogVariants, InventorySetup, InventorySt
             throw new BusinessRuleViolation('La auditoría requiere una clave de firma configurada antes de operar.');
         }
 
-        $occurredAt = now()->utc()->format('Y-m-d\TH:i:s.u\Z');
+        $occurredAt = now()->utc()->format('Y-m-d H:i:s');
         $movementId = DB::table('inventory_movements')->insertGetId([
             'operation_id' => $operationId, 'request_digest' => $this->requestDigest($request),
             'actor_id' => $actor->id, 'kind' => $kind, 'quantity' => $quantity,

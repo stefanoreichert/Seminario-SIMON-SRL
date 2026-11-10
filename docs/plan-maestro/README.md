@@ -28,7 +28,7 @@ Antes de comenzar una tarea, registrar responsable, inicio y próximo paso. HECH
 | [05-usuarios-permisos.md](05-usuarios-permisos.md) | ACC-001: módulo de usuarios/roles/permisos. |
 | [15-cuenta-corriente.md](15-cuenta-corriente.md) | FIN-001: deuda monetaria independiente de cantidades. |
 | [70-primer-flujo-operativo.md](70-primer-flujo-operativo.md) | INV-001: altas y despachos autorizados. |
-| [80-arranque-importacion.md](80-arranque-importacion.md) | DAT-001: fuentes y arranque por etapas. |
+| [80-arranque-importacion.md](80-arranque-importacion.md) | DAT-001: fuentes y arranque por etapas; DAT-002: MySQL/base simonsrl y conservación local. |
 | [90-canales-futuros.md](90-canales-futuros.md) | CAN-001: canal Internet futuro propuesto. |
 | [10-clientes-administracion.md](10-clientes-administracion.md) | Gestión de clientes y administración: RF01, RF02, RF03, RF04. |
 | [20-ventas-pedidos.md](20-ventas-pedidos.md) | Ventas y pedidos: RF05, RF06, RF07, RF08. |

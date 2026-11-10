@@ -8,6 +8,7 @@ Encabezado: `### [PENDIENTE] AREA-001 — Resultado verificable`. Las especifica
 - Dependencias contiene `ninguna` o IDs exactos en mayúsculas, separados por comas. Cada prerrequisito debe existir y el grafo no tiene ciclos ni autorreferencias. HECHO requiere todos sus prerrequisitos en HECHO.
 - Responsable e inicio deben estar asignados en EN_CURSO, PARCIAL y HECHO. Fecha de inicio es ISO o `pendiente`; Última actualización es ISO y no precede al inicio.
 - HECHO requiere evidencia sustantiva para sus criterios; el parser rechaza marcadores vacíos como `sin evidencia`, sin pretender verificar su verdad.
+- Evidencia actual admite imágenes con `![descripción](ruta)`, en cualquier estado. La ruta es relativa al archivo de la tarea y debe ser un archivo real dentro de la carpeta del plan: PNG, JPG, GIF o WebP de hasta 5 MB, con descripción. El parser rechaza las demás, incluidas las URL externas. El visor las muestra en el detalle de la tarea.
 - EXCLUIDO requiere capa EXCLUIDO, estado EXCLUIDO y una decisión `DEC-AAAA-MM-DD-NN` identificada en Fuente. La revisión debe comprobar su origen humano; un ID por sí solo no demuestra autorización.
 - Próximo paso explica qué falta o la condición de desbloqueo. En una tarea cerrada puede indicar `ninguno; tarea cerrada`. Mantener historia útil dentro de Evidencia actual.
 

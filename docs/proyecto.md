@@ -9,7 +9,7 @@ Preparación iniciada el 2026-11-04. La postergación inicial de definiciones de
 | Backend | PHP CLI 8.4.23; Laravel 13.39.0, comprobados con `php --version` y `composer show --direct`. |
 | Administración | Filament 5.11.0; panel `admin` configurado en `app/Providers/Filament/AdminPanelProvider.php`. |
 | UI | Livewire 4.4.8; Blade; Tailwind CSS 4 y Vite 8 declarados en `package.json`. |
-| Persistencia | Eloquent; conexión local SQLite observada con `php artisan config:show database.default`. El motor de producción está pendiente. |
+| Persistencia | MySQL confirmado por el usuario el 2026-11-10, base `simonsrl`; Laravel usa la conexión `mysql`. El servidor local disponible en XAMPP es MariaDB 10.4.32, compatible con ese conector. Eloquent/Query Builder permanecen en Infrastructure. |
 | Pruebas | PHPUnit 12.5.42; dos pruebas iniciales de ejemplo; FactoryOperationsTest agrega cobertura del primer flujo autorizado. |
 | Herramientas del kit | Python 3.13.15 disponible; mínimo 3.9, biblioteca estándar. Node comprueba la sintaxis del visor. |
 | Entorno local | Windows, PowerShell y directorio de trabajo en XAMPP. Despliegue y operación por definir. |
@@ -30,7 +30,7 @@ El [registro de requisitos y alcance](plan-maestro/02-requisitos-y-alcance.md) c
 
 ## Definiciones pendientes
 
-Precisar permisos por operación, reglas de crédito/facturación, identidad/estados de pedidos, fuentes de producción/costos, semántica de saldos y trazabilidad, dispositivos, documentos y métricas. Validar aplicabilidad de formularios y cómputo del plazo de devoluciones antes de implementar. Faltan también motor/entorno de producción y condiciones del ensayo de rendimiento.
+Precisar permisos por operación, reglas de crédito/facturación, identidad/estados de pedidos, fuentes de producción/costos, semántica de saldos y trazabilidad, dispositivos, documentos y métricas. Validar aplicabilidad de formularios y cómputo del plazo de devoluciones antes de implementar. El motor elegido es MySQL y la base es simonsrl (DEC-2026-11-10-01); faltan el entorno de producción y las condiciones del ensayo de rendimiento.
 
 SRS-ACL-2026-11-04 resolvió las reglas del corte actual y pospuso reportes, hojas de ruta y exportaciones. INI-002 fija contratos para ese corte. DEC-2026-11-05-11 resuelve por delegación los duplicados comerciales activos, la edición solo de borradores y la anulación del saldo tras parciales, conservando entregas. Los detalles de módulos futuros mantienen sus tareas.
 

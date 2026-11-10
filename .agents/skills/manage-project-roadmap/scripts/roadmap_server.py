@@ -9,6 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import quote, unquote, urlsplit
 
+from plan_model import IMAGE_TYPES
 from roadmap import render, snapshot, write_document
 
 
@@ -21,7 +22,8 @@ class Monitor:
 
     def fingerprint(self) -> str:
         digest = hashlib.sha256()
-        for path in sorted(self.plan_dir.rglob('*.md')):
+        suffixes = {'.md', *IMAGE_TYPES}
+        for path in sorted(path for path in self.plan_dir.rglob('*') if path.suffix.lower() in suffixes and not path.is_dir()):
             if path.is_symlink() or not path.resolve().is_relative_to(self.plan_dir.resolve()):
                 raise ValueError('El plan contiene una fuente enlazada fuera de sus archivos.')
             digest.update(path.relative_to(self.plan_dir).as_posix().encode('utf-8') + b'\0' + path.read_bytes() + b'\0')

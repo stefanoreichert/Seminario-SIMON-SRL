@@ -46,12 +46,18 @@
       <ol><li>Buscá por ID o título. Combiná estados, módulo y alcance. Los números de cada estado corresponden al plan completo; el contador de resultados refleja los filtros.</li><li>Seleccioná una tarea en la lista o el árbol para ver requisitos, dependientes, implementación, aceptación y evidencia. Los enlaces del detalle permiten saltar a tareas de otros filtros: se restablecen para mostrarlas.</li><li>Usá <strong>Ver cadena completa</strong> para aislar sus requisitos y dependientes transitivos. <strong>Salir de la cadena</strong> vuelve a los filtros anteriores.</li><li>El árbol abre a escala legible. Arrastrá el fondo para moverlo, desplazá con las flechas del teclado y acercá con los botones +/−. <strong>Ajustar</strong> encuadra todas las tareas filtradas. También podés usar la rueda del mouse o dos dedos para desplazar y Ctrl/⌘ + rueda para zoom.</li><li>En móvil, usá la lista y desplazá la página hasta el detalle. Tab y Enter permiten recorrer las tareas; Escape cierra esta ayuda o el detalle.</li></ol>
       <p>Si un filtro oculta un requisito, el pie del gráfico informa cuántas conexiones quedan fuera. El detalle conserva la lista completa y el texto literal de las dependencias, junto a los demás campos de la tarea. El estado BLOQUEADO procede del plan; no se deduce automáticamente del color de los requisitos.</p>
       <p>Los estados usan estos colores en tarjetas, lista y leyenda: pendiente gris, en curso azul, parcial ámbar, hecho verde, bloqueado rojo y fuera del alcance violeta. Las flechas toman el color del destino; seleccionar una cadena conserva esos colores.</p>
+      <p>Si la evidencia de una tarea incluye imágenes, el detalle las muestra de a una en <strong>Evidencia visual</strong>; usá ‹ y › para recorrerlas y hacé clic en la imagen para ampliarla. Ampliada, también podés recorrerlas con las flechas del teclado.</p>
       <p>Para activar la actualización automática, ejecutá desde la raíz del proyecto:</p><pre>python3 -B .agents/skills/manage-project-roadmap/scripts/roadmap.py serve --port 8788</pre>
       <p>Abrí <code>http://127.0.0.1:8788/visualizacion.html</code>. Al guardar cambios en tareas, estados o dependencias, el árbol se actualiza en aproximadamente dos segundos, conservando búsqueda, filtros, selección y zoom. El indicador superior informa la conexión. Si el plan tiene errores, se conserva la última versión válida y se muestra el motivo; al corregirlos, vuelve a sincronizar.</p>
       <p>El servidor funciona mientras este comando siga ejecutándose; Ctrl+C lo detiene. Para exportar una copia que funcione sin servidor, ejecutá el comando con <code>tree</code> en lugar de <code>serve</code> y abrí <code>docs/plan-maestro/visualizacion.html</code>. La copia local informa que no tiene sincronización. El visor no modifica las especificaciones.</p>
 
     </div>
     <div class="dialog-footer"><button id="help-done">Entendido</button></div>
+  </dialog>
+  <dialog id="image-viewer" aria-labelledby="image-title">
+    <div class="dialog-header"><h2 id="image-title" aria-live="polite"></h2><button id="image-close" aria-label="Cerrar imagen" autofocus>Cerrar</button></div>
+    <div class="dialog-body"><img id="image-full" alt=""></div>
+    <div id="image-nav" class="dialog-footer evidence-nav"><button id="image-prev" aria-label="Imagen anterior">‹</button><output id="image-count"></output><button id="image-next" aria-label="Imagen siguiente">›</button></div>
   </dialog>
   <noscript>Activá JavaScript en el navegador para explorar el árbol. Las especificaciones Markdown conservan todo el contenido del plan.</noscript>
   <script type="application/json" id="roadmap-data">__ROADMAP_DATA__</script>

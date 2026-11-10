@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -30,6 +31,13 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('business_order_changes');
+
+        if (DB::getDriverName() === 'mysql' && ! Schema::hasIndex('business_orders', ['customer_id'])) {
+            Schema::table('business_orders', function (Blueprint $table): void {
+                $table->index('customer_id');
+            });
+        }
+
         Schema::table('business_orders', function (Blueprint $table): void {
             $table->dropIndex(['customer_id', 'status']);
             $table->dropColumn('revision');

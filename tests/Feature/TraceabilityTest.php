@@ -2,7 +2,8 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Database\QueryException;
+use Illuminate\Foundation\Testing\RefreshDatabaseState;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Simon\Acceso\Infrastructure\Persistence\User;
@@ -25,8 +26,6 @@ use Tests\TestCase;
 
 class TraceabilityTest extends TestCase
 {
-    use RefreshDatabase;
-
     private User $admin;
 
     private int $customer;
@@ -44,6 +43,8 @@ class TraceabilityTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        RefreshDatabaseState::$migrated = false;
+        $this->artisan('migrate:fresh', ['--force' => true])->assertSuccessful();
         config(['inventory.audit_key' => str_repeat('traceability-test-only-key-', 3)]);
         $this->admin = User::factory()->create(['name' => 'Operador original']);
         $this->artisan('access:bootstrap', ['email' => $this->admin->email])->assertSuccessful();
@@ -211,12 +212,15 @@ class TraceabilityTest extends TestCase
         $this->get(route('traceability.index'))->assertOk()->assertSee('Indicá al menos un criterio');
 
         foreach ([['lot' => ''], ['manufactured_on' => '2026-02-30']] as $invalid) {
-            DB::table('inventory_batches')->where('id', $this->batch)->update(['lot' => 'LOTE-TRAZA', 'manufactured_on' => '2026-01-01', ...$invalid]);
-
             try {
+                DB::table('inventory_batches')->where('id', $this->batch)->update(['lot' => 'LOTE-TRAZA', 'manufactured_on' => '2026-01-01', ...$invalid]);
                 $this->dispatch();
                 $this->fail('La salida requiere lote y fabricación válidos.');
-            } catch (BusinessRuleViolation) {
+            } catch (BusinessRuleViolation|QueryException $exception) {
+                if ($exception instanceof QueryException) {
+                    $this->assertSame(1292, $exception->errorInfo[1]);
+                }
+
                 $this->assertDatabaseCount('inventory_movements', 1);
                 $this->assertDatabaseHas('business_order_lines', ['id' => $this->line, 'dispatched' => 0]);
             }

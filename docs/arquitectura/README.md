@@ -86,6 +86,8 @@ No se crearon modelos Eloquent de negocio; la infraestructura usa Query Builder 
 
 No se adoptan microservicios, CQRS, event sourcing, outbox o un bus por defecto; registrar su necesidad si un recorrido lo justifica.
 
+DEC-2026-11-10-01 y DAT-002 establecen MySQL/base simonsrl para el sistema. La conexión local mysql utiliza el servidor MariaDB 10.4.32 de XAMPP; la configuración y .env.example se alinean con esa elección. La transferencia desde SQLite conserva cuenta, permisos, metadatos y respaldo. Los nuevos movimientos almacenan y firman fecha UTC en formato SQL con precisión de segundos para ajustarse al timestamp existente, sin modificar firmas anteriores. Las pruebas SQLite históricas conservan su alcance; la verificación MySQL local se registra por separado en DAT-002 y no acredita concurrencia ni rendimiento productivos.
+
 ## Verificación
 
 Al recibir requisitos, probar invariantes, casos de uso y contratos; agregar pruebas de adaptadores, permisos, concurrencia y UI según los criterios afectados. SQLite local no acredita concurrencia sobre otro motor. Las pruebas actuales comprueban el esqueleto, no reglas de negocio.
