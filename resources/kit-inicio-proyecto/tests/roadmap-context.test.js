@@ -58,3 +58,16 @@ test("Codex has no web fallback or link when the trusted absolute project direct
   }
   assert.equal(codexProjectUrl({...data, fields: {projectPath: "/otro"}}), "codex://new?path=%2Fworkspace%2Fprueba");
 });
+test("Codex receives the selected task's full prompt and user instruction as a single encoded parameter", () => {
+  const instruction = "Revisar & conservar el historial\nNo ejecutar: ?path=/otro";
+  const proposed = {title: "Propuesta de prueba", fields: {Alcance: "Descripción revisada"}};
+  const prompt = buildPrompt(data, "QA-002", instruction, proposed);
+  const url = new URL(codexProjectUrl(data, prompt));
+  assert.equal(url.searchParams.get("path"), data.projectPath);
+  assert.equal(url.searchParams.get("prompt"), prompt);
+  assert.deepEqual([...url.searchParams.keys()], ["path", "prompt"]);
+  assert.equal(context(url.searchParams.get("prompt")).task.id, "QA-002");
+  assert.equal(context(url.searchParams.get("prompt")).proposedChanges.title, proposed.title);
+  assert.match(url.searchParams.get("prompt"), /Revisar & conservar el historial/);
+  assert.equal(codexProjectUrl(data, null), null);
+});

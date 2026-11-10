@@ -34,8 +34,8 @@
   function notice(message) {
     $("action-notice").textContent = message; $("action-notice").hidden = false;
   }
-  function codexLink() {
-    const url = RoadmapContext.codexProjectUrl(data);
+  function codexLink(taskId, getPrompt = () => promptFor(taskId)) {
+    const url = RoadmapContext.codexProjectUrl(data, getPrompt());
     if (!url) {
       const unavailable = element("button", "Abrir Codex"); unavailable.type = "button"; unavailable.disabled = true;
       unavailable.title = "Regenerá el visor desde el proyecto para incluir su carpeta local.";
@@ -43,7 +43,7 @@
     }
     const link = element("a", "Abrir Codex", "action-link");
     link.href = url; link.title = `Abrir ${data.projectName} en Codex: ${data.projectPath}`;
-    link.addEventListener("click", () => notice(`Se solicitó abrir Codex en ${data.projectPath}. Pegá el prompt en el chat local. La app debe estar instalada y asociada a codex://.`));
+    link.addEventListener("click", () => notice(`Se solicitó abrir Codex en ${data.projectPath} con el contexto de ${taskId}. Revisá el mensaje antes de enviarlo.`));
     return link;
   }
   async function copyText(text, fallback) {
@@ -85,16 +85,18 @@
     const preview = labeledInput("Prompt para copiar", proposed ? promptFor(taskId, instructionValue, proposed) : (fallbackText || promptFor(taskId, instructionValue)));
     preview.input.readOnly = true;
     $("action-body").append(instruction.wrapper, preview.wrapper,
-      element("p", `Copiá el prompt y usá Abrir Codex para abrir un chat local en ${data.projectPath || "la carpeta del proyecto (regenerá el visor para identificarla)"}. Pegá el prompt allí. El enlace no envía instrucciones. Requiere la app instalada; si el navegador no la abre, seleccioná esa carpeta desde Codex.`));
+      element("p", `Abrir Codex prepara este prompt en un chat local en ${data.projectPath || "la carpeta del proyecto (regenerá el visor para identificarla)"}; revisalo y envialo desde la app. Si el navegador no abre Codex, copiá el prompt y pegalo en el proyecto.`));
+    const openCodex = codexLink(taskId, () => preview.input.value);
     instruction.input.addEventListener("input", () => {
       (proposed ? proposalInstructions : instructions).set(taskId, instruction.input.value);
       preview.input.value = promptFor(taskId, instruction.input.value, proposed);
+      if (openCodex.tagName === "A") openCodex.href = RoadmapContext.codexProjectUrl(data, preview.input.value);
     });
     const copy = element("button", "Copiar prompt"); copy.type = "button";
     copy.addEventListener("click", () => copyText(preview.input.value, preview.input));
     const back = element("button", fromEditor ? "Volver al formulario" : "Volver al detalle"); back.type = "button";
     back.addEventListener("click", () => fromEditor && tasks.has(taskId) ? openEditor(taskId) : closeAction());
-    $("action-footer").append(back, copy, codexLink());
+    $("action-footer").append(back, copy, openCodex);
     instruction.input.focus();
   }
   async function editRequest(operation, payload) {
@@ -347,7 +349,7 @@
     const edit = element("button", "Editar tarea"), instruct = element("button", "Dar instrucción a Codex"), copy = element("button", "Copiar contexto");
     edit.addEventListener("click", () => openEditor(task.id)); instruct.addEventListener("click", () => openInstruction(task.id));
     copy.addEventListener("click", () => copyText(promptFor(task.id)));
-    actions.append(edit, instruct, copy, codexLink()); body.append(actions);
+    actions.append(edit, instruct, copy, codexLink(task.id)); body.append(actions);
     body.append(relationSection("Requisitos", task.dependencies), relationSection("Dependientes", dependents.get(task.id)));
     for (const label of data.fieldNames) {
       body.append(element("h3", label === "Dependencias" ? "Dependencias: texto del plan" : fieldLabel(label)), element("p", task.fields[label]));

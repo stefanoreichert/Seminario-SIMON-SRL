@@ -1,11 +1,12 @@
 /* Shared, side-effect-free prompt generation for the viewer and its tests. */
 globalThis.RoadmapContext = (() => {
   "use strict";
-  function codexProjectUrl(data) {
+  function codexProjectUrl(data, prompt = "") {
     const path = data.projectPath;
     if (typeof path !== "string" || /[\u0000-\u001f\u007f]/.test(path) ||
         !(path.startsWith("/") || /^[A-Za-z]:[\\/]/.test(path) || /^\\\\[^\\]+\\[^\\]+/.test(path))) return null;
-    return `codex://new?path=${encodeURIComponent(path)}`;
+    if (typeof prompt !== "string") return null;
+    return `codex://new?path=${encodeURIComponent(path)}${prompt ? `&prompt=${encodeURIComponent(prompt)}` : ""}`;
   }
   function buildPrompt(data, taskId, instruction = "", proposed = null) {
     const tasks = new Map(data.tasks.map((task) => [task.id, task]));
