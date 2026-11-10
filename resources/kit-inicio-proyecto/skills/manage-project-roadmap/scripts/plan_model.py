@@ -27,7 +27,7 @@ def iso_date(value: str) -> date:
     return date.fromisoformat(value)
 
 
-def parse_plan(plan_dir: Path) -> dict:
+def parse_plan(plan_dir: Path, overrides: dict[str, str] | None = None) -> dict:
     plan_dir = plan_dir.resolve()
     errors, tasks, sources, modules = [], [], {}, []
     index = plan_dir / 'README.md'
@@ -42,7 +42,7 @@ def parse_plan(plan_dir: Path) -> dict:
             if path.is_symlink() or not path.resolve().is_relative_to(plan_dir):
                 errors.append(f'{relative}: no se admiten fuentes enlazadas fuera del plan.')
                 continue
-            text = path.read_text(encoding='utf-8')
+            text = overrides[relative] if overrides and relative in overrides else path.read_text(encoding='utf-8')
             sources[relative] = text
             module = {'id': relative[:-3], 'title': path.stem}
             current, label, fence = None, None, None

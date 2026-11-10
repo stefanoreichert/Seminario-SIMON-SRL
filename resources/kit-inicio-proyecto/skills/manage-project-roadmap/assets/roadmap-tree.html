@@ -48,11 +48,20 @@
       <p>Los estados usan estos colores en tarjetas, lista y leyenda: pendiente gris, en curso azul, parcial ámbar, hecho verde, bloqueado rojo y fuera del alcance violeta. Las flechas toman el color del destino; seleccionar una cadena conserva esos colores.</p>
       <p>Para activar la actualización automática, ejecutá desde la raíz del proyecto:</p><pre>python3 -B .agents/skills/manage-project-roadmap/scripts/roadmap.py serve --port 8788</pre>
       <p>Abrí <code>http://127.0.0.1:8788/visualizacion.html</code>. Al guardar cambios en tareas, estados o dependencias, el árbol se actualiza en aproximadamente dos segundos, conservando búsqueda, filtros, selección y zoom. El indicador superior informa la conexión. Si el plan tiene errores, se conserva la última versión válida y se muestra el motivo; al corregirlos, vuelve a sincronizar.</p>
-      <p>El servidor funciona mientras este comando siga ejecutándose; Ctrl+C lo detiene. Para exportar una copia que funcione sin servidor, ejecutá el comando con <code>tree</code> en lugar de <code>serve</code> y abrí <code>docs/plan-maestro/visualizacion.html</code>. La copia local informa que no tiene sincronización. El visor no modifica las especificaciones.</p>
+      <p>El servidor funciona mientras este comando siga ejecutándose; Ctrl+C lo detiene. Para exportar una copia que funcione sin servidor, ejecutá el comando con <code>tree</code> en lugar de <code>serve</code> y abrí <code>docs/plan-maestro/visualizacion.html</code>. La copia local informa que no tiene sincronización y permite preparar propuestas sin escribir archivos.</p>
+      <p>Desde el detalle podés <strong>Editar tarea</strong>, <strong>Dar instrucción a Codex</strong>, <strong>Copiar contexto</strong> y <strong>Abrir Codex</strong>. La descripción corresponde a Alcance; el resto de campos conserva el esquema del plan. ID, estado y dependencias son de consulta. Los borradores duran mientras la página siga abierta; cerrar el diálogo no los guarda. Una revisión nueva del plan no sobrescribe el borrador; ante un conflicto copiá la propuesta y recargá para revisarla sobre la versión vigente.</p>
+      <p>Para habilitar guardados, usá <code>serve --allow-edit --port 8788</code> en una rama Git distinta de main/master. Elegí <strong>Validar y revisar cambios</strong>, revisá el diff y marcá la autorización antes de <strong>Guardar cambio autorizado</strong>. Cambiar un campo exige otra revisión. El servidor valida el plan completo y rechaza revisiones desactualizadas; guarda únicamente la tarea seleccionada. Revisá después <code>git diff</code> y prepará una Pull Request hacia main para aceptar el cambio.</p>
+      <p>El prompt contiene la tarea completa, prerrequisitos, dependientes, criterios, referencias e instrucción adicional. <strong>Copiar prompt</strong> usa el portapapeles; si no está disponible, selecciona el texto para copiarlo manualmente. <strong>Abrir Codex</strong> abre su web sin precargar una conversación ni enviar el contenido. Pegá el prompt en el proyecto correcto. Los campos del plan se tratan como datos; el visor no ejecuta sus instrucciones.</p>
 
     </div>
     <div class="dialog-footer"><button id="help-done">Entendido</button></div>
   </dialog>
+  <dialog id="task-action" aria-labelledby="action-title">
+    <div class="dialog-header"><h2 id="action-title"></h2><button id="action-close" type="button">Cerrar</button></div>
+    <div id="action-body" class="dialog-body"></div>
+    <div id="action-footer" class="dialog-footer"></div>
+  </dialog>
+  <p id="action-notice" class="action-notice" role="status" aria-live="polite" hidden></p>
   <noscript>Activá JavaScript en el navegador para explorar el árbol. Las especificaciones Markdown conservan todo el contenido del plan.</noscript>
   <script type="application/json" id="roadmap-data">__ROADMAP_DATA__</script>
   <script>/*__ROADMAP_JS__*/</script>

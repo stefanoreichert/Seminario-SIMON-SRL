@@ -49,7 +49,7 @@ def render(graph: dict) -> str:
     payload = json.dumps(graph, ensure_ascii=False).replace('&', '\\u0026').replace('<', '\\u003c').replace('>', '\\u003e')
     replacements = {
         '/*__ROADMAP_CSS__*/': (ASSETS / 'roadmap-tree.css').read_text(encoding='utf-8'),
-        '/*__ROADMAP_JS__*/': (ASSETS / 'roadmap-tree.js').read_text(encoding='utf-8'),
+        '/*__ROADMAP_JS__*/': (ASSETS / 'roadmap-context.js').read_text(encoding='utf-8') + '\n' + (ASSETS / 'roadmap-tree.js').read_text(encoding='utf-8'),
         '__ROADMAP_DATA__': payload,
         '__PROJECT_NAME__': html.escape(graph['projectName']),
         '__GENERATED_AT__': html.escape(graph['generatedAt']),
@@ -82,7 +82,10 @@ def main(argv=None) -> int:
     parser.add_argument('--json', action='store_true')
     parser.add_argument('--port', type=int, default=8788)
     parser.add_argument('--interval', type=float, default=1.0)
+    parser.add_argument('--allow-edit', action='store_true', help='Autorizar edición local con revisión explícita en una rama Git distinta de main/master.')
     args = parser.parse_args(argv)
+    if args.allow_edit and args.command != 'serve':
+        parser.error('--allow-edit solo se admite con serve.')
     root = args.root.resolve()
     plan_dir = (args.plan_dir or root / 'docs/plan-maestro').resolve()
     output = (args.output or plan_dir / 'visualizacion.html').absolute()
@@ -112,7 +115,7 @@ def main(argv=None) -> int:
             raise ValueError('Usar intervalo >= 0.1 segundos y puerto entre 0 y 65535.')
         if args.command == 'serve':
             from roadmap_server import serve
-            return serve(root, plan_dir, output, args.port, args.interval)
+            return serve(root, plan_dir, output, args.port, args.interval, allow_edit=args.allow_edit)
         graph, _ = snapshot(root, plan_dir, output)
         write_document(output, render(graph))
         print(f"Visor generado: {len(graph['tasks'])} tareas, {len(graph['edges'])} dependencias.\n{output}")

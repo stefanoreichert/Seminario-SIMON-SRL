@@ -25,6 +25,148 @@
     return node;
   };
   const dot = (status) => {const node = element("span", undefined, "dot"); node.style.setProperty("--status", colors[status]); node.setAttribute("aria-hidden", "true"); return node;};
+  const drafts = new Map(), instructions = new Map();
+  let actionTask = null, actionTrigger = null, actionBusy = false;
+  const promptFor = (id, instruction = "", proposed = null) => RoadmapContext.buildPrompt(data, id, instruction, proposed);
+  const canPersist = () => Boolean(data.live?.allowEdit && location.protocol === "http:" && ["127.0.0.1", "localhost"].includes(location.hostname));
+  function notice(message) {
+    $("action-notice").textContent = message; $("action-notice").hidden = false;
+  }
+  function codexLink() {
+    const link = element("a", "Abrir Codex", "action-link");
+    link.href = "https://chatgpt.com/codex"; link.target = "_blank"; link.rel = "noopener noreferrer";
+    link.addEventListener("click", () => notice("Codex se abre sin precargar una conversación. Copiá el prompt y pegalo en el proyecto correspondiente."));
+    return link;
+  }
+  async function copyText(text, fallback) {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+      await navigator.clipboard.writeText(text); notice("Contexto copiado. Pegalo en Codex para continuar.");
+    } catch {
+      if (fallback) {fallback.focus(); fallback.select(); notice("Seleccionamos el prompt. Usá Ctrl+C o ⌘+C para copiarlo.");}
+      else openInstruction(actionTask || selected, text);
+    }
+  }
+  function openAction(taskId, title) {
+    actionTask = taskId; actionTrigger = document.activeElement;
+    $("action-title").textContent = `${title} · ${taskId}`;
+    $("action-body").replaceChildren(); $("action-footer").replaceChildren();
+    if (!$("task-action").open) $("task-action").showModal();
+  }
+  function closeAction() {
+    if (actionBusy) return;
+    $("task-action").close(); actionTask = null;
+    (actionTrigger?.isConnected ? actionTrigger : $("detail").querySelector("button") || $("search")).focus({preventScroll: true});
+  }
+  $("action-close").addEventListener("click", closeAction);
+  $("task-action").addEventListener("cancel", (event) => {event.preventDefault(); closeAction();});
+  function labeledInput(label, value, multiline = true) {
+    const wrapper = element("label", label, "action-field"), input = element(multiline ? "textarea" : "input");
+    input.value = value; input.required = true;
+    if (multiline) input.rows = label.includes("Prompt") ? 14 : 3;
+    wrapper.append(input); return {wrapper, input};
+  }
+  function openInstruction(taskId, fallbackText = null, proposed = null, initialInstruction = "") {
+    if (!tasks.has(taskId)) {notice("La tarea ya no existe. Actualizá la selección."); return;}
+    openAction(taskId, "Dar instrucción a Codex");
+    const task = tasks.get(taskId);
+    $("action-body").append(element("p", `${task.title} · ${labels[task.status]}`));
+    const instruction = labeledInput("Instrucción adicional", initialInstruction || instructions.get(taskId) || ""); instruction.input.required = false;
+    const preview = labeledInput("Prompt para copiar", fallbackText || promptFor(taskId, instruction.input.value));
+    preview.input.readOnly = true;
+    $("action-body").append(instruction.wrapper, preview.wrapper,
+      element("p", "Copiá el prompt, abrí Codex y pegalo en el proyecto correspondiente. El enlace no precarga ni envía instrucciones."));
+    instruction.input.addEventListener("input", () => {
+      instructions.set(taskId, instruction.input.value);
+      preview.input.value = promptFor(taskId, instruction.input.value, proposed);
+    });
+    const copy = element("button", "Copiar prompt"); copy.type = "button";
+    copy.addEventListener("click", () => copyText(preview.input.value, preview.input));
+    $("action-footer").append(copy, codexLink());
+    instruction.input.focus();
+  }
+  async function editRequest(operation, payload) {
+    if (!canPersist()) throw new Error("La copia estática y el servidor sin --allow-edit no guardan cambios.");
+    const sessionResponse = await fetch("/__roadmap__/session", {cache: "no-store", signal: AbortSignal.timeout(5000)});
+    if (!sessionResponse.ok) throw new Error("No se pudo autorizar la sesión local de edición.");
+    const session = await sessionResponse.json();
+    if (session.projectId !== data.projectId) throw new Error("El servidor corresponde a otro proyecto.");
+    const response = await fetch(`/__roadmap__/edit/${operation}`, {
+      method: "POST", headers: {"Content-Type": "application/json", "X-Roadmap-Token": session.token},
+      body: JSON.stringify(payload), signal: AbortSignal.timeout(15000),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+    return result;
+  }
+  function openEditor(taskId) {
+    const task = tasks.get(taskId);
+    openAction(taskId, "Editar tarea");
+    const base = {taskId, revision: data.revision || null};
+    const draft = drafts.get(taskId) || {title: task.title, fields: {...task.fields}, revision: base.revision};
+    drafts.set(taskId, draft);
+    const form = element("form"), message = element("p"); message.setAttribute("role", "status");
+    message.textContent = canPersist() ? "Revisá los cambios y autorizá el guardado local. Después revisá git diff y abrí una PR hacia main." : "Modo propuesta: no se escriben archivos. Podés copiar la edición propuesta para revisarla con Codex. Para guardar, iniciá serve --allow-edit en una rama Git.";
+    form.append(element("p", `ID: ${task.id} · Estado: ${task.status} · Dependencias: ${task.fields.Dependencias}. Estos datos se conservan. Agregá nuevas verificaciones al final de Evidencia actual para conservar su historia.`), message);
+    const title = labeledInput("Título", draft.title, false); title.input.maxLength = 500; form.append(title.wrapper);
+    const controls = new Map();
+    for (const name of data.fieldNames.filter((name) => name !== "Dependencias")) {
+      const control = labeledInput(name === "Alcance" ? "Alcance / descripción completa" : name, draft.fields[name]);
+      controls.set(name, control.input); form.append(control.wrapper);
+    }
+    const diff = element("pre", "", "edit-diff"); diff.hidden = true;
+    const authorization = element("label", undefined, "edit-authorization"), checkbox = element("input"); checkbox.type = "checkbox"; checkbox.disabled = true;
+    authorization.append(checkbox, element("span", "Revisé las diferencias y autorizo guardar este cambio local para revisión mediante Git y Pull Request."));
+    authorization.hidden = !canPersist(); form.append(diff, authorization); $("action-body").append(form);
+    const review = element("button", "Validar y revisar cambios"), save = element("button", "Guardar cambio autorizado"), copy = element("button", "Preparar propuesta para Codex");
+    for (const button of [review, save, copy]) button.type = "button";
+    review.hidden = save.hidden = !canPersist(); save.disabled = true;
+    $("action-footer").append(copy, review, save);
+    let approval = null, reviewedPayload = null;
+    function currentPayload() {
+      const fields = Object.fromEntries([...controls].filter(([name, input]) => input.value.trim() !== task.fields[name]).map(([name, input]) => [name, input.value.trim()]));
+      return {...base, revision: draft.revision, title: title.input.value.trim(), fields};
+    }
+    function invalidate() {
+      draft.title = title.input.value; draft.fields = Object.fromEntries([...controls].map(([name, input]) => [name, input.value]));
+      approval = null; reviewedPayload = null; save.disabled = true; checkbox.checked = false; checkbox.disabled = true; diff.hidden = true;
+    }
+    form.addEventListener("input", (event) => {if (event.target !== checkbox) invalidate();});
+    checkbox.addEventListener("change", () => {save.disabled = !checkbox.checked || !approval;});
+    const busy = (value) => {
+      actionBusy = value; $("action-close").disabled = value;
+      for (const input of [title.input, ...controls.values(), review, copy]) input.disabled = value;
+      checkbox.disabled = value || !approval; save.disabled = value || !approval || !checkbox.checked;
+    };
+    review.addEventListener("click", async () => {
+      if (!form.reportValidity()) return;
+      busy(true);
+      try {
+        const payload = currentPayload(), result = await editRequest("preview", payload);
+        reviewedPayload = payload; approval = result.approval; checkbox.checked = false;
+        diff.textContent = result.diff; diff.hidden = false;
+        message.textContent = `Plan completo válido. Archivo: ${result.source}. Rama: ${result.branch}. Revisá las diferencias antes de autorizar.`;
+        diff.scrollIntoView({block: "nearest"});
+      } catch (error) {approval = null; message.textContent = error.message;}
+      finally {busy(false);}
+    });
+    save.addEventListener("click", async () => {
+      if (!approval || !checkbox.checked || !reviewedPayload) return;
+      busy(true);
+      try {
+        const result = await editRequest("save", {...reviewedPayload, approval, authorized: true});
+        drafts.delete(taskId); busy(false); closeAction(); notice(result.message);
+      } catch (error) {approval = null; checkbox.checked = false; message.textContent = error.message;}
+      finally {busy(false);}
+    });
+    copy.addEventListener("click", () => {
+      if (!form.reportValidity()) return;
+      const proposed = currentPayload(); closeAction();
+      const instruction = "Revisá esta propuesta de edición de la tarea. Validá el plan completo y prepará el diff para revisión antes de guardar.";
+      openInstruction(taskId, promptFor(taskId, instruction, proposed), proposed, instruction);
+    });
+    form.addEventListener("submit", (event) => event.preventDefault()); title.input.focus();
+  }
   function closure(id, direction) {
     const found = new Set([id]), pending = [id];
     while (pending.length) {
@@ -187,7 +329,11 @@
     const module = data.modules.find((item) => item.id === task.module); body.append(element("p", module.title));
     if (chain || !visible.some((item) => item.id === task.id)) body.append(element("p", chain ? `Cadena completa de ${chain}; los filtros quedan suspendidos hasta salir.` : "Esta tarea quedó fuera de los filtros actuales."));
     const actions = element("div", undefined, "detail-actions"), branch = element("button", chain ? "Salir de la cadena" : "Ver cadena completa");
-    branch.addEventListener("click", () => {chain = chain ? null : task.id; render();}); actions.append(branch); body.append(actions);
+    branch.addEventListener("click", () => {chain = chain ? null : task.id; render();}); actions.append(branch);
+    const edit = element("button", "Editar tarea"), instruct = element("button", "Dar instrucción a Codex"), copy = element("button", "Copiar contexto");
+    edit.addEventListener("click", () => openEditor(task.id)); instruct.addEventListener("click", () => openInstruction(task.id));
+    copy.addEventListener("click", () => copyText(promptFor(task.id)));
+    actions.append(edit, instruct, copy, codexLink()); body.append(actions);
     body.append(relationSection("Requisitos", task.dependencies), relationSection("Dependientes", dependents.get(task.id)));
     for (const label of data.fieldNames) {
       body.append(element("h3", label === "Dependencias" ? "Dependencias: texto del plan" : label), element("p", task.fields[label]));
@@ -245,7 +391,7 @@
   const closeHelp = () => {$("help").close(); $("help-open").focus();};
   $("help-close").addEventListener("click", closeHelp); $("help-done").addEventListener("click", closeHelp);
   $("help").addEventListener("cancel", (event) => {event.preventDefault(); closeHelp();});
-  document.addEventListener("keydown", (event) => {if (event.key === "Escape" && !$("help").open && selected) {event.preventDefault(); closeDetail();}});
+  document.addEventListener("keydown", (event) => {if (event.key === "Escape" && !$("help").open && !$("task-action").open && selected) {event.preventDefault(); closeDetail();}});
   new ResizeObserver(() => selected && positions.has(selected) ? center(selected) : readableFrame()).observe(viewport);
   render();
 
