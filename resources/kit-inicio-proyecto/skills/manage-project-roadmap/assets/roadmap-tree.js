@@ -4,6 +4,8 @@
   const $ = (id) => document.getElementById(id);
   const labels = {PENDIENTE: "Pendiente", EN_CURSO: "En curso", PARCIAL: "Parcial", HECHO: "Hecho", BLOQUEADO: "Bloqueado", EXCLUIDO: "Fuera del alcance"};
   const scopes = {SOLICITADO: "Solicitado", PROPUESTO: "Propuesto", EXCLUIDO: "Excluido"};
+  const scopeDescriptions = {SOLICITADO: "Pedido confirmado por el usuario.", PROPUESTO: "Propuesta pendiente de autorización para ejecutarse.", EXCLUIDO: "Fuera del alcance por una decisión explícita."};
+  const fieldLabel = (name) => name === "Capa" ? "Alcance autorizado" : name === "Alcance" ? "Descripción y alcance" : name;
   const colors = {PENDIENTE: "#65788c", EN_CURSO: "#245ca6", PARCIAL: "#996308", HECHO: "#18765b", BLOQUEADO: "#b13d48", EXCLUIDO: "#7a559d"};
   const backgrounds = {PENDIENTE: "#eef1f5", EN_CURSO: "#e9f1ff", PARCIAL: "#fff3d8", HECHO: "#e5f5eb", BLOQUEADO: "#fdebed", EXCLUIDO: "#f2ebfa"};
   function colorize(node, status) {
@@ -33,9 +35,15 @@
     $("action-notice").textContent = message; $("action-notice").hidden = false;
   }
   function codexLink() {
+    const url = RoadmapContext.codexProjectUrl(data);
+    if (!url) {
+      const unavailable = element("button", "Abrir Codex"); unavailable.type = "button"; unavailable.disabled = true;
+      unavailable.title = "Regenerá el visor desde el proyecto para incluir su carpeta local.";
+      return unavailable;
+    }
     const link = element("a", "Abrir Codex", "action-link");
-    link.href = "https://chatgpt.com/codex"; link.target = "_blank"; link.rel = "noopener noreferrer";
-    link.addEventListener("click", () => notice("Codex se abre sin precargar una conversación. Copiá el prompt y pegalo en el proyecto correspondiente."));
+    link.href = url; link.title = `Abrir ${data.projectName} en Codex: ${data.projectPath}`;
+    link.addEventListener("click", () => notice(`Se solicitó abrir Codex en ${data.projectPath}. Pegá el prompt en el chat local. La app debe estar instalada y asociada a codex://.`));
     return link;
   }
   async function copyText(text, fallback) {
@@ -75,7 +83,7 @@
     const preview = labeledInput("Prompt para copiar", fallbackText || promptFor(taskId, instruction.input.value));
     preview.input.readOnly = true;
     $("action-body").append(instruction.wrapper, preview.wrapper,
-      element("p", "Copiá el prompt, abrí Codex y pegalo en el proyecto correspondiente. El enlace no precarga ni envía instrucciones."));
+      element("p", `Copiá el prompt y usá Abrir Codex para abrir un chat local en ${data.projectPath || "la carpeta del proyecto (regenerá el visor para identificarla)"}. Pegá el prompt allí. El enlace no envía instrucciones. Requiere la app instalada; si el navegador no la abre, seleccioná esa carpeta desde Codex.`));
     instruction.input.addEventListener("input", () => {
       instructions.set(taskId, instruction.input.value);
       preview.input.value = promptFor(taskId, instruction.input.value, proposed);
@@ -111,7 +119,8 @@
     const title = labeledInput("Título", draft.title, false); title.input.maxLength = 500; form.append(title.wrapper);
     const controls = new Map();
     for (const name of data.fieldNames.filter((name) => name !== "Dependencias")) {
-      const control = labeledInput(name === "Alcance" ? "Alcance / descripción completa" : name, draft.fields[name]);
+      const control = labeledInput(fieldLabel(name), draft.fields[name]);
+      if (name === "Capa") control.wrapper.append(element("span", "Solicitado: pedido confirmado. Propuesto: pendiente de autorización. Excluido: fuera del alcance por decisión explícita."));
       controls.set(name, control.input); form.append(control.wrapper);
     }
     const diff = element("pre", "", "edit-diff"); diff.hidden = true;
@@ -336,7 +345,8 @@
     actions.append(edit, instruct, copy, codexLink()); body.append(actions);
     body.append(relationSection("Requisitos", task.dependencies), relationSection("Dependientes", dependents.get(task.id)));
     for (const label of data.fieldNames) {
-      body.append(element("h3", label === "Dependencias" ? "Dependencias: texto del plan" : label), element("p", task.fields[label]));
+      body.append(element("h3", label === "Dependencias" ? "Dependencias: texto del plan" : fieldLabel(label)), element("p", task.fields[label]));
+      if (label === "Capa") body.append(element("p", scopeDescriptions[task.scope]));
     }
     body.append(element("h3", "Especificación fuente"));
     const source = element("a", `${task.source} · línea ${task.line}`); source.href = task.sourceUrl; source.target = "_blank"; source.rel = "noopener"; body.append(source);

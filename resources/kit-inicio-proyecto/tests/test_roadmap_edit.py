@@ -125,6 +125,18 @@ class EditTest(EditFixture):
         self.assertNotIn(self.monitor.edit_secret, self.monitor.document.decode())
         self.assertNotEqual(0, self.cli('tree', '--allow-edit').returncode)
 
+    def test_project_directory_comes_from_root_and_survives_static_and_live_exports(self):
+        config = self.root / '.agents/project.json'
+        config.parent.mkdir(parents=True)
+        config.write_text(json.dumps({'name': 'Mi proyecto', 'projectPath': '/otra/carpeta'}), encoding='utf-8')
+        graph, _ = snapshot(self.root, self.plan, self.output)
+        self.assertEqual(str(self.root.resolve()), graph['projectPath'])
+        document = render(graph)
+        payload = document.split('<script type="application/json" id="roadmap-data">', 1)[1].split('</script>', 1)[0]
+        self.assertEqual(str(self.root.resolve()), json.loads(payload)['projectPath'])
+        self.monitor.refresh()
+        self.assertEqual(str(self.root.resolve()), self.monitor.graph['projectPath'])
+
 
 class EditHttpTest(EditFixture):
     def setUp(self):

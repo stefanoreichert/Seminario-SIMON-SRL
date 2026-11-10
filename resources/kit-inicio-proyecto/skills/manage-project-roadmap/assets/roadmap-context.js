@@ -1,6 +1,12 @@
 /* Shared, side-effect-free prompt generation for the viewer and its tests. */
 globalThis.RoadmapContext = (() => {
   "use strict";
+  function codexProjectUrl(data) {
+    const path = data.projectPath;
+    if (typeof path !== "string" || /[\u0000-\u001f\u007f]/.test(path) ||
+        !(path.startsWith("/") || /^[A-Za-z]:[\\/]/.test(path) || /^\\\\[^\\]+\\[^\\]+/.test(path))) return null;
+    return `codex://new?path=${encodeURIComponent(path)}`;
+  }
   function buildPrompt(data, taskId, instruction = "", proposed = null) {
     const tasks = new Map(data.tasks.map((task) => [task.id, task]));
     const task = tasks.get(taskId);
@@ -20,7 +26,7 @@ globalThis.RoadmapContext = (() => {
       return [...found].map(relation);
     };
     const context = {
-      project: {id: data.projectId, name: data.projectName}, schemaVersion: data.schemaVersion,
+      project: {id: data.projectId, name: data.projectName, path: data.projectPath}, schemaVersion: data.schemaVersion,
       revision: data.revision || null, generatedAt: data.generatedAt,
       task: {id: task.id, title: task.title, description: task.fields.Alcance, status: task.status,
         scope: task.scope, source: task.source, line: task.line, fields: {...task.fields}},
@@ -40,5 +46,5 @@ globalThis.RoadmapContext = (() => {
       JSON.stringify(instruction.trim() || "Revisar el contexto; esperar una instrucción específica antes de modificar archivos."),
     ].join("\n\n");
   }
-  return {buildPrompt};
+  return {buildPrompt, codexProjectUrl};
 })();

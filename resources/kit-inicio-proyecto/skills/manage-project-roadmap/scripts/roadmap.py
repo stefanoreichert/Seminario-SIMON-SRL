@@ -27,6 +27,7 @@ def metadata(root: Path) -> dict:
         raise ValueError('Configuración de proyecto inválida.')
     return {'projectName': config.get('name', root.name),
             'projectId': hashlib.sha256(str(root.resolve()).encode('utf-8')).hexdigest()[:16],
+            'projectPath': str(root.resolve()),
             'generatedAt': datetime.now().astimezone().isoformat(timespec='seconds')}
 
 
