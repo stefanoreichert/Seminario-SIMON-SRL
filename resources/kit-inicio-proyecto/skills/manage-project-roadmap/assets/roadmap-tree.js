@@ -27,7 +27,7 @@
     return node;
   };
   const dot = (status) => {const node = element("span", undefined, "dot"); node.style.setProperty("--status", colors[status]); node.setAttribute("aria-hidden", "true"); return node;};
-  const drafts = new Map(), instructions = new Map();
+  const drafts = new Map(), instructions = new Map(), proposalInstructions = new Map();
   let actionTask = null, actionTrigger = null, actionBusy = false;
   const promptFor = (id, instruction = "", proposed = null) => RoadmapContext.buildPrompt(data, id, instruction, proposed);
   const canPersist = () => Boolean(data.live?.allowEdit && location.protocol === "http:" && ["127.0.0.1", "localhost"].includes(location.hostname));
@@ -56,7 +56,8 @@
     }
   }
   function openAction(taskId, title) {
-    actionTask = taskId; actionTrigger = document.activeElement;
+    if (!$("task-action").open) actionTrigger = document.activeElement;
+    actionTask = taskId;
     $("action-title").textContent = `${title} · ${taskId}`;
     $("action-body").replaceChildren(); $("action-footer").replaceChildren();
     if (!$("task-action").open) $("task-action").showModal();
@@ -74,23 +75,26 @@
     if (multiline) input.rows = label.includes("Prompt") ? 14 : 3;
     wrapper.append(input); return {wrapper, input};
   }
-  function openInstruction(taskId, fallbackText = null, proposed = null, initialInstruction = "") {
+  function openInstruction(taskId, fallbackText = null, proposed = null, initialInstruction = "", fromEditor = false) {
     if (!tasks.has(taskId)) {notice("La tarea ya no existe. Actualizá la selección."); return;}
     openAction(taskId, "Dar instrucción a Codex");
     const task = tasks.get(taskId);
     $("action-body").append(element("p", `${task.title} · ${labels[task.status]}`));
-    const instruction = labeledInput("Instrucción adicional", initialInstruction || instructions.get(taskId) || ""); instruction.input.required = false;
-    const preview = labeledInput("Prompt para copiar", fallbackText || promptFor(taskId, instruction.input.value));
+    const instructionValue = proposed ? (proposalInstructions.get(taskId) ?? initialInstruction) : (initialInstruction || instructions.get(taskId) || "");
+    const instruction = labeledInput("Instrucción adicional", instructionValue); instruction.input.required = false;
+    const preview = labeledInput("Prompt para copiar", proposed ? promptFor(taskId, instructionValue, proposed) : (fallbackText || promptFor(taskId, instructionValue)));
     preview.input.readOnly = true;
     $("action-body").append(instruction.wrapper, preview.wrapper,
       element("p", `Copiá el prompt y usá Abrir Codex para abrir un chat local en ${data.projectPath || "la carpeta del proyecto (regenerá el visor para identificarla)"}. Pegá el prompt allí. El enlace no envía instrucciones. Requiere la app instalada; si el navegador no la abre, seleccioná esa carpeta desde Codex.`));
     instruction.input.addEventListener("input", () => {
-      instructions.set(taskId, instruction.input.value);
+      (proposed ? proposalInstructions : instructions).set(taskId, instruction.input.value);
       preview.input.value = promptFor(taskId, instruction.input.value, proposed);
     });
     const copy = element("button", "Copiar prompt"); copy.type = "button";
     copy.addEventListener("click", () => copyText(preview.input.value, preview.input));
-    $("action-footer").append(copy, codexLink());
+    const back = element("button", fromEditor ? "Volver al formulario" : "Volver al detalle"); back.type = "button";
+    back.addEventListener("click", () => fromEditor && tasks.has(taskId) ? openEditor(taskId) : closeAction());
+    $("action-footer").append(back, copy, codexLink());
     instruction.input.focus();
   }
   async function editRequest(operation, payload) {
@@ -127,10 +131,11 @@
     const authorization = element("label", undefined, "edit-authorization"), checkbox = element("input"); checkbox.type = "checkbox"; checkbox.disabled = true;
     authorization.append(checkbox, element("span", "Revisé las diferencias y autorizo guardar este cambio local para revisión mediante Git y Pull Request."));
     authorization.hidden = !canPersist(); form.append(diff, authorization); $("action-body").append(form);
-    const review = element("button", "Validar y revisar cambios"), save = element("button", "Guardar cambio autorizado"), copy = element("button", "Preparar propuesta para Codex");
-    for (const button of [review, save, copy]) button.type = "button";
+    const back = element("button", "Volver al detalle"), review = element("button", "Validar y revisar cambios"), save = element("button", "Guardar cambio autorizado"), copy = element("button", "Preparar propuesta para Codex");
+    for (const button of [back, review, save, copy]) button.type = "button";
+    back.addEventListener("click", closeAction);
     review.hidden = save.hidden = !canPersist(); save.disabled = true;
-    $("action-footer").append(copy, review, save);
+    $("action-footer").append(back, copy, review, save);
     let approval = null, reviewedPayload = null;
     function currentPayload() {
       const fields = Object.fromEntries([...controls].filter(([name, input]) => input.value.trim() !== task.fields[name]).map(([name, input]) => [name, input.value.trim()]));
@@ -144,7 +149,7 @@
     checkbox.addEventListener("change", () => {save.disabled = !checkbox.checked || !approval;});
     const busy = (value) => {
       actionBusy = value; $("action-close").disabled = value;
-      for (const input of [title.input, ...controls.values(), review, copy]) input.disabled = value;
+      for (const input of [title.input, ...controls.values(), back, review, copy]) input.disabled = value;
       checkbox.disabled = value || !approval; save.disabled = value || !approval || !checkbox.checked;
     };
     review.addEventListener("click", async () => {
@@ -164,15 +169,15 @@
       busy(true);
       try {
         const result = await editRequest("save", {...reviewedPayload, approval, authorized: true});
-        drafts.delete(taskId); busy(false); closeAction(); notice(result.message);
+        drafts.delete(taskId); proposalInstructions.delete(taskId); busy(false); closeAction(); notice(result.message);
       } catch (error) {approval = null; checkbox.checked = false; message.textContent = error.message;}
       finally {busy(false);}
     });
     copy.addEventListener("click", () => {
       if (!form.reportValidity()) return;
-      const proposed = currentPayload(); closeAction();
+      const proposed = currentPayload();
       const instruction = "Revisá esta propuesta de edición de la tarea. Validá el plan completo y prepará el diff para revisión antes de guardar.";
-      openInstruction(taskId, promptFor(taskId, instruction, proposed), proposed, instruction);
+      openInstruction(taskId, null, proposed, instruction, true);
     });
     form.addEventListener("submit", (event) => event.preventDefault()); title.input.focus();
   }
