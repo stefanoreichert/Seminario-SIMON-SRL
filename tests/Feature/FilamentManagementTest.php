@@ -45,7 +45,7 @@ class FilamentManagementTest extends TestCase
 
     public function test_native_checkbox_values_preserve_existing_user_and_role_assignments(): void
     {
-        $response = $this->actingAs($this->admin)->get(route('access.index'))->assertOk()->assertSee('fi-checkbox-input', false);
+        $response = $this->actingAs($this->admin)->get(route('access.index', ['editar' => $this->admin->id]))->assertOk()->assertSee('fi-checkbox-input', false);
         $document = new \DOMDocument;
         $previous = libxml_use_internal_errors(true);
         $document->loadHTML($response->getContent());
@@ -54,7 +54,7 @@ class FilamentManagementTest extends TestCase
         $xpath = new \DOMXPath($document);
         $this->assertGreaterThanOrEqual(1, $xpath->query('//input[@name="active" and @type="checkbox" and @checked]')->length);
         $this->assertSame(1, $xpath->query('//input[@name="role_ids[]" and @checked]')->length);
-        $this->get(route('access.roles'))->assertOk()->assertSee('fi-checkbox-input', false)->assertDontSee('<x-simon::', false);
+        $this->get(route('access.roles', ['nuevo' => 1]))->assertOk()->assertSee('fi-checkbox-input', false)->assertDontSee('<x-simon::', false);
     }
 
     public function test_modules_are_separated_and_balance_refresh_keeps_the_requested_scope(): void

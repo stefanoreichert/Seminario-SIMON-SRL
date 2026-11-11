@@ -44,6 +44,14 @@ final readonly class QueryPendingOrders implements PendingDemand
         return ['totals' => $report['totals'], 'articles' => $report['articles']];
     }
 
+    public function quantities(int $actorId, array $variantIds): array
+    {
+        $permission = $this->access->allows($actorId, 'production.manage') ? 'production.manage' : 'inventory.view';
+        $this->access->require($actorId, $permission);
+
+        return $this->orders->quantities($variantIds);
+    }
+
     private function validatePage(int $page): void
     {
         if ($page < 1) {

@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Simon\Acceso\Infrastructure\Persistence\User;
+use Simon\ClientesAdministracion\Application\ManageAddresses;
 use Simon\ClientesAdministracion\Application\ManageCustomers;
+use Simon\InventarioTrazabilidad\Application\ManagePicking;
+use Simon\InventarioTrazabilidad\Application\ManageSupplies;
 use Simon\InventarioTrazabilidad\Application\MoveStock;
 use Simon\InventarioTrazabilidad\Application\PrepareInventory;
 use Simon\VentasPedidos\Application\ManageOrders;
@@ -24,6 +27,13 @@ if (! $application->environment('testing') || ! str_contains($database, 'simon-p
 }
 
 if ($argv[1] === 'setup') {
+    $setupOptions = isset($argv[2]) ? json_decode(base64_decode($argv[2]), true, flags: JSON_THROW_ON_ERROR) : [];
+    $orderCount = $setupOptions['orders'] ?? 1000;
+
+    if (! is_int($orderCount) || $orderCount < 1 || $orderCount > 1000) {
+        throw new RuntimeException('Volumen de la fixture fuera del rango permitido.');
+    }
+
     Artisan::call('migrate', ['--force' => true]);
     $admin = User::factory()->create(['name' => 'Administración de prueba', 'email' => 'admin@rf008.example.test']);
     Artisan::call('access:bootstrap', ['email' => $admin->email]);
@@ -54,8 +64,8 @@ if ($argv[1] === 'setup') {
 
     $totals = ['admin' => 0, 'warehouse' => 0, 'production' => 0, 'S' => 0, 'G' => 0];
     $target = null;
-    DB::transaction(function () use ($actors, $customers, $variants, &$totals, &$target): void {
-        for ($index = 0; $index < 1000; $index++) {
+    DB::transaction(function () use ($actors, $customers, $variants, $orderCount, &$totals, &$target): void {
+        for ($index = 0; $index < $orderCount; $index++) {
             $origin = $index % 2 === 0 ? 'S' : 'G';
             $quantity = 100 + $index;
             $id = DB::table('business_orders')->insertGetId([
@@ -93,13 +103,33 @@ if ($argv[1] === 'setup') {
         $sessions[$key] = ['id' => $actor->id, 'cookie' => app('encrypter')->encrypt(CookieValuePrefix::create($name, app('encrypter')->getKey()).$session->getId(), EncryptCookies::serialized($name))];
     }
 
-    echo json_encode(['actors' => $sessions, 'cookie_name' => config('session.cookie'), 'totals' => $totals, 'target' => $target, 'customer_id' => $customers[0], 'variant_id' => $variants[0], 'orders' => 1000, 'lines' => 5000], JSON_THROW_ON_ERROR);
+    echo json_encode(['actors' => $sessions, 'cookie_name' => config('session.cookie'), 'totals' => $totals, 'target' => $target, 'customer_id' => $customers[0], 'variant_id' => $variants[0], 'orders' => $orderCount, 'lines' => $orderCount * 5], JSON_THROW_ON_ERROR);
     exit;
 }
 
 $request = json_decode(base64_decode($argv[2]), true, flags: JSON_THROW_ON_ERROR);
+$result = [];
 
 switch ($request['action']) {
+    case 'prepare-ui':
+        $result['address_id'] = app(ManageAddresses::class)->save($request['actor_id'], $request['customer_id'], null, 'Dirección de prueba UI', 'Calle de ensayo 123', 'Posadas', 'Misiones');
+        break;
+    case 'prepare-picking':
+        app(ManagePicking::class)->identify($request['actor_id'], $request['token'], $request['batch_id']);
+        $result['codes'] = DB::table('inventory_pair_units')->where('batch_id', $request['batch_id'])->orderBy('code')->limit(3)->pluck('code')->all();
+        app(ManageSupplies::class)->configure($request['actor_id'], 30);
+        app(ManageSupplies::class)->register($request['actor_id'], (string) Str::uuid(), 'Adhesivo de prueba', 'INSUMO-VENCIDO', now()->subDay()->toDateString());
+        app(ManageSupplies::class)->register($request['actor_id'], (string) Str::uuid(), 'Insumo de prueba', 'INSUMO-PROXIMO', now()->addDays(10)->toDateString());
+        break;
+    case 'production':
+        $result['production_id'] = app(PrepareInventory::class)->production($request['actor_id'], $request['token'], $request['variant_id'], 'TANDA-RF010', '2026-01-01', $request['quantity']);
+        break;
+    case 'receive':
+        app(MoveStock::class)->receive($request['actor_id'], $request['token'], $request['production_id'], $request['quantity']);
+        break;
+    case 'revoke':
+        DB::table('access_user_roles')->where('user_id', $request['actor_id'])->delete();
+        break;
     case 'create':
         app(RegisterOrder::class)->handle($request['actor_id'], $request['token'], $request['customer_id'], $request['origin'], [['variant_id' => $request['variant_id'], 'quantity' => $request['quantity']]]);
         break;
@@ -116,4 +146,4 @@ switch ($request['action']) {
         throw new RuntimeException('Acción del ensayo desconocida.');
 }
 
-echo json_encode(['committedAtMs' => microtime(true) * 1000], JSON_THROW_ON_ERROR);
+echo json_encode([...$result, 'committedAtMs' => microtime(true) * 1000], JSON_THROW_ON_ERROR);

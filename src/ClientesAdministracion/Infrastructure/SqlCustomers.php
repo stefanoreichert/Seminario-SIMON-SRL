@@ -19,6 +19,19 @@ final class SqlCustomers implements CustomerDirectory, CustomerRecords, Dispatch
             ->map(fn (object $customer): array => (array) $customer)->all();
     }
 
+    public function matchingName(string $term): array
+    {
+        $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $term).'%';
+
+        return DB::table('business_customers')->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])->pluck('id')->map(fn ($id): int => (int) $id)->all();
+    }
+
+    public function authorizations(array $orderIds): array
+    {
+        return DB::table('dispatch_authorizations')->whereIn('order_id', $orderIds)->get()
+            ->map(fn (object $authorization): array => (array) $authorization)->all();
+    }
+
     public function register(CustomerProfile $profile, string $creditHistory, int $actorId): int
     {
         try {

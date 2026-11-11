@@ -20,3 +20,20 @@ La asignación de facultades se realiza desde el módulo, no por nombres de pers
 - **Última actualización:** 2026-11-04
 - **Próximo paso:** asignar el primer administrador con access:bootstrap a una cuenta existente y configurar las cuentas/roles reales desde el módulo
 - **Evidencia actual:** Implementados ManageAccess/SqlAccess y /gestion/usuarios; altas/edición/desactivación, roles y permisos, identificador vendedor, hash de contraseña y protección del último administrador. FactoryOperationsTest verifica denegación HTTP/directa, asignación, hash, identificador y desactivación. Suite final: 16 pruebas y 87 aserciones aprobadas; Pint aprobado. No se inventaron cuentas personales ni credenciales.
+
+### [HECHO] ACC-002 — Unificar y simplificar la gestión de usuarios, roles y permisos
+
+- **Capa:** SOLICITADO
+- **Fuente:** Solicitud del usuario del 2026-11-11 en esta conversación
+- **Contexto propietario:** Acceso
+- **Dependencias:** ACC-001
+- **Alcance:** Unificar usuarios, roles y permisos en un panel; presentar listas simples y facilitar la creación y edición de usuarios y roles, asignación de roles y permisos, y desactivación o reactivación de usuarios.
+- **Fuera de alcance:** Borrar usuarios o historial, crear cuentas reales o alterar el catálogo de permisos.
+- **Invariantes:** Solo access.manage gestiona usuarios; conservar el último administrador activo, la validación y el hash de contraseñas, los identificadores únicos y el historial. Las escrituras pasan por el caso de uso existente.
+- **Contratos y archivos previstos:** UI del contexto Acceso, integración Livewire/Filament y pruebas de gestión y autorización existentes.
+- **Criterios de aceptación:** Un panel permite alternar entre usuarios y roles; la lista de usuarios muestra nombre, correo, roles y estado, y permite crear, editar, cambiar roles y desactivar o reactivar. La lista de roles permite crear y editar nombres y permisos. Las interacciones de gestión usan Livewire; se verifica autorización en servidor y protección del último administrador, sin pérdida de datos ni historia.
+- **Responsable:** Codex
+- **Fecha de inicio:** 2026-11-11
+- **Última actualización:** 2026-11-11
+- **Próximo paso:** ninguno; tarea cerrada. Configurar usuarios y roles reales con datos autorizados cuando corresponda.
+- **Evidencia actual:** Panel único de acceso desde Usuarios, con secciones de usuarios y roles; la URL anterior de roles sigue disponible. Listados con roles, estado y cantidad de permisos; formularios seleccionados para crear y editar cuentas y roles. La desactivación y reactivación se realiza en la edición de usuario; las asignaciones y permisos se guardan mediante ManagementActions/Livewire y ManageAccess, con autorización en servidor. Se comprobó la conservación de contraseña e identidad, aplicación de permisos, protección del último administrador y denegación de operaciones directas Livewire sin permiso. Prerrequisito ACC-001 verificado HECHO. Regresión: 35 pruebas y 454 aserciones aprobadas; Pint aprobado. Después se destacaron las acciones de crear y editar con botones Filament y se reutilizó el tamaño operativo de 48 px; 11 pruebas y 274 aserciones aprobaron tras ese ajuste. No se acredita revisión visual en navegador ni aceptación operativa.

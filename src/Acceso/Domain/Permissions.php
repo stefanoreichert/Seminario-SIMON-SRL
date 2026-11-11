@@ -10,6 +10,8 @@ final class Permissions
         return [
             'access.manage' => 'Gestionar usuarios, roles y permisos',
             'clients.manage' => 'Gestionar clientes e historial crediticio',
+            'finance.view' => 'Consultar cuenta corriente financiera',
+            'finance.manage' => 'Registrar saldos, cargos, cobros, ajustes y conciliaciones',
             'catalog.manage' => 'Gestionar modelos, colores y talles',
             'orders.create' => 'Registrar y gestionar pedidos propios con identificador de vendedor',
             'orders.manage' => 'Registrar y gestionar pedidos de cualquier origen',

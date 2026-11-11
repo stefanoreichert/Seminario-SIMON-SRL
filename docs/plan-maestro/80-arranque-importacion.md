@@ -17,9 +17,9 @@ Fuentes actuales: papel, Excel y otro sistema. El usuario exportará después. O
 - **Criterios de aceptación:** Conservar identificadores/orígenes, detectar CUIT/códigos repetidos, validar cantidades por lote/fecha y conciliar totales antes/después. No sumar como terminados un stock ya cargado inicialmente. Conservar fuente, fecha de corte y evidencias de rechazos.
 - **Responsable:** sin asignar
 - **Fecha de inicio:** pendiente
-- **Última actualización:** 2026-11-04
+- **Última actualización:** 2026-11-11
 - **Próximo paso:** esperar las exportaciones pospuestas; mientras tanto usar carga inicial controlada sin inventar datos reales
-- **Evidencia actual:** Trabajo registrado a partir de SRS-ACL-2026-11-04; sin implementación de este módulo todavía.
+- **Evidencia actual:** Trabajo registrado a partir de SRS-ACL-2026-11-04; la importación de datos reales sigue pendiente. El 2026-11-11 el usuario pidió un ejemplo de cada sector para presentar el sistema: el comando demo:create agrega datos ficticios identificados como DEMO mediante casos de uso, con referencias de operación estables y sin sobrescribir datos existentes. Se creó el cliente DEMO · Calzados del Sur (#6), su dirección, un artículo, el pedido NP-000001 (20 pares, uno entregado y 19 pendientes), una tanda con cuatro pares en proceso, stock total de 12 pares, ocho códigos individuales (uno despachado y uno seleccionado), un insumo vencido, autorización, movimientos auditados y cinco asientos financieros ficticios (saldo 114500 ARS). Usuario demo.operacion@example.test y rol DEMO · Operación sin access.manage; se conservaron cuentas y roles reales. Cuatro pruebas y 55 aserciones verifican repetición sin duplicados, preservación de datos/permisos, rechazo de colisiones, reversión, autorización y visualización de la muestra en los módulos; la auditoría MySQL quedó verificada en secuencia 3. La migración financiera fue revisada y aprobada tras respaldo privado, como registra FIN-001. La muestra no constituye una importación ni un saldo inicial comercial y no cierra DAT-001.
 
 ### [HECHO] DAT-002 — Configurar MySQL y la base simonsrl conservando los datos locales
 

@@ -83,6 +83,29 @@ final class SqlOrderRegistration implements OrderQueries, OrderRegistration
             })->all();
     }
 
+    public function authorizationPage(string $term, array $customerIds, int $page): array
+    {
+        $orders = DB::table('business_orders')->whereIn('status', [OrderStatus::Confirmed->value, OrderStatus::Partial->value]);
+        if ($term !== '') {
+            $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $term).'%';
+            $orders->where(fn ($where) => $where->whereRaw("number LIKE ? ESCAPE '!'", [$pattern])->orWhereIntegerInRaw('customer_id', $customerIds));
+        }
+        $total = $orders->count();
+        $pages = max(1, (int) ceil($total / 20));
+        $page = min($page, $pages);
+
+        return [
+            'items' => $orders->select('id', 'number', 'customer_id', 'origin', 'status')->orderByDesc('id')->offset(($page - 1) * 20)->limit(20)->get()->all(),
+            'total' => $total, 'page' => $page, 'pages' => $pages,
+        ];
+    }
+
+    public function authorizationOrder(int $id): ?object
+    {
+        return DB::table('business_orders')->whereIn('status', [OrderStatus::Confirmed->value, OrderStatus::Partial->value])
+            ->where('id', $id)->first(['id', 'number', 'customer_id', 'origin', 'status']);
+    }
+
     /** @param list<int> $orderIds
      * @return list<object>
      */

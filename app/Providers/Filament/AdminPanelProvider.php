@@ -30,6 +30,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
+            ->spa()
             ->brandName('SIMON SRL')
             ->viteTheme('src/Shared/UI/Assets/filament.css')
             ->maxContentWidth(Width::Full)
@@ -43,11 +44,13 @@ class AdminPanelProvider extends PanelProvider
                 $this->module('Catálogo', 'operations.catalog', 'Fábrica', 'heroicon-o-squares-2x2', ['catalog.manage', 'inventory.view'], 10),
                 $this->module('Producción', 'operations.production.index', 'Fábrica', 'heroicon-o-cog-6-tooth', ['production.manage', 'inventory.view', 'inventory.receive'], 20),
                 $this->module('Stock', 'operations.stock', 'Fábrica', 'heroicon-o-cube', ['inventory.view', 'inventory.receive', 'inventory.opening', 'inventory.dispatch'], 30),
+                $this->module('Identificación y picking', 'picking.index', 'Fábrica', 'heroicon-o-qr-code', ['inventory.view', 'inventory.receive', 'inventory.dispatch'], 31, 'picking.*'),
+                $this->module('Insumos y vencimientos', 'supplies.index', 'Fábrica', 'heroicon-o-calendar-days', ['inventory.view', 'production.manage'], 32, 'supplies.*'),
                 $this->module('Trazabilidad', 'traceability.index', 'Fábrica', 'heroicon-o-magnifying-glass', ['inventory.view', 'inventory.dispatch', 'audit.view', 'orders.manage', 'dispatch.authorize'], 35),
                 $this->module('Despachos', 'operations.dispatch.index', 'Fábrica', 'heroicon-o-truck', ['inventory.dispatch'], 40),
                 $this->module('Autorizaciones', 'operations.authorization', 'Administración', 'heroicon-o-shield-check', ['dispatch.authorize'], 10),
-                $this->module('Usuarios', 'access.index', 'Administración', 'heroicon-o-user-circle', ['access.manage'], 20),
-                $this->module('Roles y permisos', 'access.roles', 'Administración', 'heroicon-o-key', ['access.manage'], 30),
+                $this->module('Cuenta corriente', 'current-accounts.index', 'Administración', 'heroicon-o-banknotes', ['finance.view', 'finance.manage'], 15, 'current-accounts.*'),
+                $this->module('Usuarios', 'access.index', 'Administración', 'heroicon-o-user-circle', ['access.manage'], 20, ['access.index', 'access.roles']),
                 $this->module('Auditoría', 'operations.audit', 'Administración', 'heroicon-o-clipboard-document-list', ['audit.view'], 40),
             ])
             ->colors([

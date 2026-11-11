@@ -3,12 +3,28 @@
 namespace Simon\VentasPedidos\Infrastructure;
 
 use Illuminate\Database\Query\Builder;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Simon\Shared\Application\ReadSourceUnavailable;
 use Simon\VentasPedidos\Application\PendingOrderQueries;
 use Simon\VentasPedidos\Domain\OrderStatus;
 
 final class SqlPendingOrders implements PendingOrderQueries
 {
+    public function quantities(array $variantIds): array
+    {
+        try {
+            $pairs = DB::table('business_orders as orders')->join('business_order_lines as lines', 'lines.order_id', '=', 'orders.id')
+                ->whereIn('orders.status', [OrderStatus::Confirmed->value, OrderStatus::Partial->value])
+                ->whereColumn('lines.quantity', '>', 'lines.dispatched')->whereIn('lines.variant_id', $variantIds)
+                ->selectRaw('lines.variant_id, SUM(lines.quantity - lines.dispatched) as pairs')->groupBy('lines.variant_id')->pluck('pairs', 'variant_id');
+
+            return array_replace(array_fill_keys($variantIds, 0), $pairs->map(fn (mixed $quantity): int => (int) $quantity)->all());
+        } catch (QueryException $exception) {
+            throw new ReadSourceUnavailable('No se pudieron consultar los pedidos pendientes.', previous: $exception);
+        }
+    }
+
     public function snapshot(?int $sellerId, ?string $origin, int $customerPage, int $articlePage, bool $includeCustomers): array
     {
         return DB::transaction(function () use ($sellerId, $origin, $customerPage, $articlePage, $includeCustomers): array {

@@ -1,4 +1,7 @@
-document.querySelectorAll('[data-address-selector]').forEach((form) => {
+const initializedForms = new WeakSet();
+const initializeForms = () => document.querySelectorAll('[data-address-selector]').forEach((form) => {
+    if (initializedForms.has(form)) return;
+    initializedForms.add(form);
     const source = form.querySelector('[data-address-source]');
     const destinations = form.querySelector('[name="delivery_address_id"]');
     const status = form.querySelector('[data-address-status]');
@@ -23,11 +26,11 @@ document.querySelectorAll('[data-address-selector]').forEach((form) => {
         }
 
         try {
-            const response = await fetch(selected.dataset.addressUrl, {
-                credentials: 'same-origin', headers: { Accept: 'application/json' }, cache: 'no-store', signal: request.signal,
-            });
-            if (!response.ok || response.redirected) throw new Error('No se pudieron consultar las direcciones');
-            const addresses = await response.json();
+            const dispatcher = document.querySelector('[data-management-actions]');
+            const path = new URL(selected.dataset.addressUrl, location.href).pathname;
+            const customerId = Number(path.match(/\/clientes\/(\d+)\/direcciones\/opciones$/)?.[1]);
+            if (!dispatcher || !customerId) throw new Error('No se pudieron consultar las direcciones');
+            const addresses = await window.Livewire.find(dispatcher.getAttribute('wire:id')).addresses(customerId);
             if (request.signal.aborted) return;
             addresses.forEach((address) => {
                 destinations.appendChild(new Option(`${address.label} · ${address.street} · ${address.locality} / ${address.province}`, String(address.id)));
@@ -50,3 +53,6 @@ document.querySelectorAll('[data-address-selector]').forEach((form) => {
         loadAddresses();
     }
 });
+
+document.addEventListener('livewire:navigated', initializeForms);
+initializeForms();

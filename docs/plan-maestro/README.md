@@ -25,7 +25,7 @@ Antes de comenzar una tarea, registrar responsable, inicio y próximo paso. HECH
 | [02-requisitos-y-alcance.md](02-requisitos-y-alcance.md) | Fuente íntegra, actores, correspondencia de IDs, definiciones abiertas y secuencia técnica propuesta. |
 | [03-decisiones-relevamiento.md](03-decisiones-relevamiento.md) | Aclaraciones, alcance autorizado y puesta en marcha. |
 | [04-traslado-contextos-src.md](04-traslado-contextos-src.md) | REF-001: traslado a src, autoload, migración, skills y regresión. |
-| [05-usuarios-permisos.md](05-usuarios-permisos.md) | ACC-001: módulo de usuarios/roles/permisos. |
+| [05-usuarios-permisos.md](05-usuarios-permisos.md) | ACC-001: módulo de usuarios/roles/permisos; ACC-002: panel unificado y simplificado. |
 | [15-cuenta-corriente.md](15-cuenta-corriente.md) | FIN-001: deuda monetaria independiente de cantidades. |
 | [70-primer-flujo-operativo.md](70-primer-flujo-operativo.md) | INV-001: altas y despachos autorizados. |
 | [80-arranque-importacion.md](80-arranque-importacion.md) | DAT-001: fuentes y arranque por etapas; DAT-002: MySQL/base simonsrl y conservación local. |
@@ -40,6 +40,8 @@ Antes de comenzar una tarea, registrar responsable, inicio y próximo paso. HECH
 Los estados se calculan desde las tareas; este índice no mantiene contadores de avance. Las dependencias representan prerrequisitos técnicos propuestos y no una prioridad comercial ni un compromiso de fechas. Las dudas no convierten automáticamente un requisito en BLOQUEADO. El [visor actualizado](visualizacion.html) consume el mismo esquema.
 
 La instrucción posterior DEC-2026-11-04-08 fija Filament como interfaz común y autoriza continuar las RF una por vez. UI-001 registra la unificación del panel y su verificación; esa tarea no cambia los estados de requisitos de negocio por reorganizar sus pantallas.
+
+La solicitud del usuario del 2026-11-11 establece **UI-002 como la siguiente tarea a realizar**: incorporar Livewire en todos los sectores de gestión donde se permita y necesite. Esta prioridad no altera los estados, dependencias ni evidencias de las demás tareas; el mismo criterio se aplicará a las interfaces futuras al desarrollar cada tarea autorizada.
 
 ## Comandos
 

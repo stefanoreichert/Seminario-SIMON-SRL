@@ -1,102 +1,65 @@
-import { test } from 'node:test';
+import test from 'node:test';
 import assert from 'node:assert/strict';
-import { startBalanceRefresh } from '../../src/Shared/UI/Assets/refresh-balances.js';
+import { watchBalanceRequest } from '../../src/Shared/UI/Assets/refresh-balances.js';
 
-function harness(fetch) {
-    const timers = new Map();
-    const events = new Map();
-    let sequence = 0;
-    const container = { dataset: { refreshUrl: '/admin/pendientes/saldos?origin=S&customer_page=2' }, innerHTML: 'saldo anterior', contains: () => false, querySelectorAll: () => [], replaceChildren() { this.innerHTML = ''; } };
-    const status = { textContent: '' };
-    const page = { hidden: false, activeElement: null, addEventListener: (name, callback) => events.set(name, callback), removeEventListener: (name) => events.delete(name) };
-    const environment = {
-        fetch, document: page, window: { addEventListener() {}, removeEventListener() {} }, now: () => 0,
-        setTimeout(callback, delay) { timers.set(++sequence, { callback, delay }); return sequence; },
-        clearTimeout(id) { timers.delete(id); },
-    };
-    const controls = startBalanceRefresh(container, status, environment);
-    return { timers, events, container, status, page, controls };
+function requestFixture() {
+    const status = { isConnected: true, textContent: '' };
+    const container = { matches: () => true, content: 'saldos anteriores', replaceChildren() { this.content = ''; } };
+    const callbacks = {};
+    let timeout;
+    let cancelled = false;
+    let cleared = false;
+    const request = { messages: [{ component: { el: container } }], cancel() { cancelled = true; } };
+    watchBalanceRequest({ request, ...Object.fromEntries(['onSuccess', 'onError', 'onFailure', 'onRedirect', 'onFinish'].map(name => [name, callback => { callbacks[name] = callback; }])) }, {
+        document: { querySelector: () => status },
+        setTimeout(callback, milliseconds) { assert.equal(milliseconds, 2500); timeout = callback; return 1; },
+        clearTimeout(id) { assert.equal(id, 1); cleared = true; },
+    });
+    return { callbacks, status, container, timeout: () => timeout(), cancelled: () => cancelled, cleared: () => cleared };
 }
 
-test('replaces only the balance fragment, preserves the URL scope, and polls every two seconds', async () => {
-    let options;
-    const state = harness(async (url, request) => {
-        assert.equal(url, '/admin/pendientes/saldos?origin=S&customer_page=2');
-        options = request;
-        return { ok: true, status: 200, text: async () => 'saldo nuevo' };
-    });
-    assert.equal([...state.timers.values()][0].delay, 2000);
-    await state.controls.refresh();
-    assert.equal(state.container.innerHTML, 'saldo nuevo');
-    assert.equal(options.cache, 'no-store');
-    assert.equal(options.credentials, 'same-origin');
-    assert.match(state.status.textContent, /Saldos actualizados/);
-    assert.equal(state.timers.size, 1);
-    assert.equal([...state.timers.values()][0].delay, 2000);
-    state.controls.stop();
+test('a slow Livewire refresh is cancelled and explicitly marks retained balances stale', () => {
+    const fixture = requestFixture();
+    fixture.timeout();
+    assert.equal(fixture.cancelled(), true);
+    assert.equal(fixture.container.content, 'saldos anteriores');
+    assert.match(fixture.status.textContent, /desactualizados/);
 });
 
-test('does not overlap requests and marks data stale when a request exceeds 2500 ms', async () => {
-    let calls = 0;
-    const state = harness((_url, request) => new Promise((_resolve, reject) => {
-        calls++;
-        request.signal.addEventListener('abort', () => reject(new Error('timeout')));
-    }));
-    const running = state.controls.refresh();
-    await state.controls.refresh();
-    assert.equal(calls, 1);
-    const timeout = [...state.timers.values()].find((timer) => timer.delay === 2500);
-    assert.ok(timeout);
-    timeout.callback();
-    await running;
-    assert.equal(state.container.innerHTML, 'saldo anterior');
-    assert.match(state.status.textContent, /desactualizados/);
-    state.controls.stop();
-});
-
-test('removes previously visible data when the server denies access or redirects to login', async () => {
-    for (const response of [{ status: 401 }, { status: 403 }, { status: 200, redirected: true }]) {
-        const state = harness(async () => response);
-        await state.controls.refresh();
-        assert.equal(state.container.innerHTML, '');
-        assert.match(state.status.textContent, /permisos cambiaron/);
-        state.controls.stop();
+test('Livewire authorization and expired-session errors remove previously visible balances', () => {
+    for (const status of [401, 403, 419]) {
+        const fixture = requestFixture();
+        let prevented = false;
+        fixture.callbacks.onError({ response: { status }, preventDefault() { prevented = true; } });
+        assert.equal(prevented, true);
+        assert.equal(fixture.container.content, '');
+        assert.match(fixture.status.textContent, /permisos cambiaron/);
     }
 });
 
-test('a server failure keeps the last data with an explicit stale notice and permits retry', async () => {
-    const state = harness(async () => ({ ok: false, status: 500 }));
-    await state.controls.refresh();
-    assert.equal(state.container.innerHTML, 'saldo anterior');
-    assert.match(state.status.textContent, /desactualizados/);
-    assert.equal(state.timers.size, 1);
-    state.controls.stop();
+test('redirects to login remove visible balances and avoid rendering the login response into them', () => {
+    const fixture = requestFixture();
+    let prevented = false;
+    fixture.callbacks.onRedirect({ preventDefault() { prevented = true; } });
+    assert.equal(prevented, true);
+    assert.equal(fixture.container.content, '');
 });
 
-test('resumes immediately on returning to the page and stops cleanly when leaving', async () => {
-    let calls = 0;
-    const state = harness(async () => { calls++; return { ok: true, status: 200, text: async () => 'nuevo' }; });
-    state.page.hidden = true;
-    state.events.get('visibilitychange')();
-    assert.equal(calls, 0);
-    state.page.hidden = false;
-    state.events.get('visibilitychange')();
-    await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(calls, 1);
-    state.controls.stop();
-    await state.controls.refresh();
-    assert.equal(calls, 1);
-    assert.equal(state.timers.size, 0);
-    assert.equal(state.events.size, 0);
+test('network and server failures retain balances with an explicit stale notice', () => {
+    for (const failure of ['network', 'server']) {
+        const fixture = requestFixture();
+        if (failure === 'network') fixture.callbacks.onFailure();
+        else fixture.callbacks.onError({ response: { status: 503 }, preventDefault() {} });
+        assert.equal(fixture.container.content, 'saldos anteriores');
+        assert.match(fixture.status.textContent, /desactualizados/);
+    }
 });
 
-test('restores focus to the same pagination link after replacing the fragment', async () => {
-    const state = harness(async () => ({ ok: true, status: 200, text: async () => 'nuevo' }));
-    let focused = false;
-    state.page.activeElement = { getAttribute: () => '/admin/pendientes?article_page=2' };
-    state.container.contains = () => true;
-    state.container.querySelectorAll = () => [{ getAttribute: () => '/admin/pendientes?article_page=2', focus: () => { focused = true; } }];
-    await state.controls.refresh();
-    assert.equal(focused, true);
-    state.controls.stop();
+test('a completed Livewire refresh clears its deadline and reports successful recovery', () => {
+    const fixture = requestFixture();
+    fixture.callbacks.onFailure();
+    fixture.callbacks.onSuccess();
+    fixture.callbacks.onFinish();
+    assert.equal(fixture.cleared(), true);
+    assert.match(fixture.status.textContent, /Saldos actualizados/);
 });

@@ -23,4 +23,9 @@ interface CustomerRecords
     public function updateCredit(int $customerId, string $creditHistory, int $actorId): void;
 
     public function authorize(int $orderId, int $actorId, bool $billing, bool $credit, string $conditions): void;
+
+    /** @param list<int> $orderIds
+     * @return list<array<string,mixed>>
+     */
+    public function authorizations(array $orderIds): array;
 }

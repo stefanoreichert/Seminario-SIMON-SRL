@@ -15,5 +15,5 @@
     </form>
 </x-filament::section>
 <p id="operations-sync" role="status" aria-live="polite">Los saldos se actualizan automáticamente.</p>
-<div data-refresh-url="{{ route('pending.snapshot', $pendingPageParams) }}" tabindex="-1">@include('ventas::pending-summary')</div>
+@livewire(\Simon\Shared\UI\LiveBalances::class, ['kind' => 'pending', 'parameters' => $pendingPageParams])
 @endsection

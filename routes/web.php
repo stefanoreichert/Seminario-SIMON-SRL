@@ -6,9 +6,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Simon\Acceso\UI\AccessController;
 use Simon\Acceso\UI\RequirePermission;
+use Simon\ClientesAdministracion\UI\CurrentAccountController;
+use Simon\ClientesAdministracion\UI\CurrentAccountsReady;
 use Simon\ClientesAdministracion\UI\CustomerAddressController;
 use Simon\ClientesAdministracion\UI\CustomerController;
 use Simon\InventarioTrazabilidad\UI\OperationsController;
+use Simon\InventarioTrazabilidad\UI\PickingController;
+use Simon\InventarioTrazabilidad\UI\PickingReady;
+use Simon\InventarioTrazabilidad\UI\SupplyController;
 use Simon\InventarioTrazabilidad\UI\TraceabilityController;
 use Simon\Shared\UI\PanelLocale;
 use Simon\Shared\UI\PrivateOperations;
@@ -40,6 +45,15 @@ Route::middleware(['panel:admin', 'auth', AuthenticateSession::class, PrivateOpe
         ->middleware(RequirePermission::class.':clients.manage,orders.create,orders.manage,inventory.dispatch')->name('customers.addresses.options');
     Route::get('operaciones', [OperationsController::class, 'index'])->name('operations.index');
     Route::get('operaciones/saldos', [OperationsController::class, 'index'])->name('operations.snapshot');
+    Route::get('cuenta-corriente', [CurrentAccountController::class, 'index'])->name('current-accounts.index')->middleware([RequirePermission::class.':finance.view,finance.manage', CurrentAccountsReady::class]);
+    Route::post('cuenta-corriente', [CurrentAccountController::class, 'store'])->name('current-accounts.store')->middleware([RequirePermission::class.':finance.manage', CurrentAccountsReady::class]);
+    Route::get('picking', [PickingController::class, 'index'])->name('picking.index')->middleware([RequirePermission::class.':inventory.view,inventory.receive,inventory.dispatch', PickingReady::class]);
+    Route::post('picking/identificar', [PickingController::class, 'identify'])->name('picking.identify')->middleware([RequirePermission::class.':inventory.receive', PickingReady::class]);
+    Route::post('picking/leer', [PickingController::class, 'scan'])->name('picking.scan')->middleware([RequirePermission::class.':inventory.dispatch', PickingReady::class]);
+    Route::post('picking/despachar', [PickingController::class, 'dispatch'])->name('picking.dispatch')->middleware([RequirePermission::class.':inventory.dispatch', PickingReady::class]);
+    Route::get('insumos', [SupplyController::class, 'index'])->name('supplies.index')->middleware([RequirePermission::class.':inventory.view,production.manage', PickingReady::class]);
+    Route::post('insumos', [SupplyController::class, 'store'])->name('supplies.store')->middleware([RequirePermission::class.':production.manage', PickingReady::class]);
+    Route::post('insumos/anticipacion', [SupplyController::class, 'configure'])->name('supplies.configure')->middleware([RequirePermission::class.':production.manage', PickingReady::class]);
     Route::get('trazabilidad', [TraceabilityController::class, 'index'])->name('traceability.index')
         ->middleware(RequirePermission::class.':inventory.view,inventory.dispatch,audit.view,orders.manage,dispatch.authorize');
     Route::get('pendientes', [PendingOrdersController::class, 'index'])->name('pending.index')

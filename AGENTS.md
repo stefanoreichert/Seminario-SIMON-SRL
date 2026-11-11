@@ -8,6 +8,10 @@ Perfil Laravel, PHP 8.4; raíz `src/<Contexto>/{Domain,Application,Infrastructur
 
 Toda gestión se integra al panel Filament existente: menú lateral izquierdo, navegación agrupada por módulos, componentes y tema de la versión instalada, diseño adaptable y permisos en servidor. Continuar las RF autorizadas una tarea por vez, registrando verificación y cierre antes de iniciar la siguiente.
 
+Los botones de gestión deben ser fáciles de identificar y pulsar: usar componentes Filament visibles, texto que describa la acción, contraste suficiente en temas claro y oscuro y un foco perceptible. Destacar la acción principal frente a las secundarias; no depender solo del color o de un ícono. Conservar controles operativos de al menos 48 px y verificar su presentación adaptable en cambios futuros.
+
+Usar Livewire de la versión instalada en toda interacción de gestión donde sea técnicamente viable: formularios, acciones, búsquedas, filtros, paginación, selecciones dependientes y actualización de datos. Preferir los componentes reactivos nativos de Filament. Aplicar esta regla a implementaciones nuevas y cambios futuros; justificar concretamente cualquier interacción que deba conservar otra solución. Mantener Livewire en UI, autorización de servidor en cada solicitud y escrituras por casos de uso; los textos, presentaciones estáticas, archivos descargables y comandos de consola no necesitan componentes reactivos.
+
 Para una tarea con ID, consultar primero y una sola vez:
 `python -X utf8 -B .agents/skills/manage-project-roadmap/scripts/roadmap.py task ID --format context`
 Ya valida todo el plan. Leer la tarea y el código afectado; abrir referencias técnicas o prerrequisitos cuando falte un dato necesario o aparezca una contradicción. Las referencias son ubicaciones, no una lista de lectura obligatoria.

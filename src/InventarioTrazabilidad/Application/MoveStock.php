@@ -20,6 +20,7 @@ final readonly class MoveStock
         private DeliveryAddresses $addresses,
         private CustomerDirectory $customers,
         private CatalogVariants $catalog,
+        private PairUnits $pairs,
     ) {}
 
     public function receive(int $actorId, string $operationId, int $productionId, int $quantity): int
@@ -39,6 +40,7 @@ final readonly class MoveStock
             $production = $this->inventory->production($productionId);
             MovementRules::batch($production['lot'], $production['manufactured_on']);
             $batchId = $this->inventory->receive($productionId, $quantity);
+            $this->pairs->increaseIfTracked($batchId, $quantity);
 
             return $this->inventory->record($operationId, $actor, 'receipt', $quantity, $batchId, null, $request);
         });
@@ -60,17 +62,25 @@ final readonly class MoveStock
             }
 
             $batchId = $this->inventory->opening($variantId, trim($lot), $manufacturedOn, $quantity);
+            $this->pairs->increaseIfTracked($batchId, $quantity);
 
             return $this->inventory->record($operationId, $actor, 'opening', $quantity, $batchId, null, $request);
         });
     }
 
-    public function dispatch(int $actorId, string $operationId, int $orderLineId, int $batchId, int $quantity, bool $ownerWithdrawal = false, ?int $deliveryAddressId = null): int
+    /** @param list<string> $pairCodes */
+    public function dispatch(int $actorId, string $operationId, int $orderLineId, int $batchId, int $quantity, bool $ownerWithdrawal = false, ?int $deliveryAddressId = null, array $pairCodes = []): int
     {
         $actor = $this->access->require($actorId, 'inventory.dispatch');
         MovementRules::operationId($operationId);
         MovementRules::quantity($quantity);
         $request = ['kind' => 'dispatch', 'order_line_id' => $orderLineId, 'batch_id' => $batchId, 'quantity' => $quantity, 'owner_withdrawal' => $ownerWithdrawal];
+
+        if ($pairCodes !== []) {
+            $pairCodes = array_map(trim(...), $pairCodes);
+            sort($pairCodes);
+            $request['pair_codes'] = implode(',', $pairCodes);
+        }
 
         if ($deliveryAddressId !== null) {
             if ($deliveryAddressId < 1) {
@@ -80,7 +90,7 @@ final readonly class MoveStock
             $request['delivery_address_id'] = $deliveryAddressId;
         }
 
-        return $this->transactions->run(function () use ($actor, $operationId, $orderLineId, $batchId, $quantity, $ownerWithdrawal, $request, $deliveryAddressId): int {
+        return $this->transactions->run(function () use ($actor, $operationId, $orderLineId, $batchId, $quantity, $ownerWithdrawal, $request, $deliveryAddressId, $pairCodes): int {
             $previous = $this->inventory->replay($operationId, $actor->id, $request);
 
             if ($previous !== null) {
@@ -88,6 +98,11 @@ final readonly class MoveStock
             }
 
             $line = $this->orders->line($orderLineId);
+
+            if ($pairCodes === [] && $quantity > $line['quantity'] - $line['dispatched'] - $this->pairs->pickedCount($orderLineId)) {
+                throw new BusinessRuleViolation('Hay pares seleccionados para esta línea. Confirmá su picking o liberá la selección antes de despachar otros pares.');
+            }
+
             $destination = $deliveryAddressId === null ? $line['delivery_destination'] : $this->addresses->snapshot($line['customer_id'], $deliveryAddressId);
 
             if ($destination === null && ! $ownerWithdrawal) {
@@ -97,6 +112,20 @@ final readonly class MoveStock
             $authorization = $this->authorizations->assertAuthorized($line['order_id']);
             $stock = $this->inventory->stock($batchId);
             MovementRules::batch($stock['lot'], $stock['manufactured_on']);
+
+            if ($this->pairs->tracked($batchId) && count($pairCodes) !== $quantity) {
+                throw new BusinessRuleViolation('Este lote usa identificación individual. Seleccioná sus pares desde Picking antes de confirmar la salida.');
+            }
+
+            if (count(array_unique($pairCodes)) !== count($pairCodes) || ($pairCodes !== [] && count($pairCodes) !== $quantity)) {
+                throw new BusinessRuleViolation('Cada par despachado requiere un código distinto.');
+            }
+
+            $units = array_map(fn (string $code) => $this->pairs->get($code), $pairCodes);
+
+            foreach ($units as $unit) {
+                $unit->assertSelected($orderLineId, $batchId);
+            }
 
             if ($stock['variant_id'] !== $line['variant_id']) {
                 throw new BusinessRuleViolation('El lote no corresponde al artículo del pedido.');
@@ -114,10 +143,21 @@ final readonly class MoveStock
                 'customer' => $customer, 'article' => $article,
             ];
 
+            if ($pairCodes !== []) {
+                $shipment['pair_codes'] = $pairCodes;
+            }
+
             $this->orders->dispatch($orderLineId, $quantity);
             $this->inventory->decrease($batchId, $quantity);
 
-            return $this->inventory->record($operationId, $actor, $ownerWithdrawal ? 'owner_withdrawal' : 'dispatch', $quantity, $batchId, $orderLineId, $request, $authorization, $destination ?? [], $shipment);
+            $movementId = $this->inventory->record($operationId, $actor, $ownerWithdrawal ? 'owner_withdrawal' : 'dispatch', $quantity, $batchId, $orderLineId, $request, $authorization, $destination ?? [], $shipment);
+
+            foreach ($units as $unit) {
+                $unit->dispatch($orderLineId, $batchId);
+                $this->pairs->save($unit, $actor->id, $movementId);
+            }
+
+            return $movementId;
         });
     }
 }

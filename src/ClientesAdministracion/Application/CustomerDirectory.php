@@ -12,4 +12,7 @@ interface CustomerDirectory
      * @return list<array{id:int,name:string,cuit:string}>
      */
     public function identified(array $ids): array;
+
+    /** @return list<int> */
+    public function matchingName(string $term): array;
 }

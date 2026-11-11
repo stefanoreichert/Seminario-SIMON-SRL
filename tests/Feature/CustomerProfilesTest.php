@@ -2,11 +2,14 @@
 
 namespace Tests\Feature;
 
+use Filament\Facades\Filament;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Livewire\Livewire;
 use Simon\Acceso\Infrastructure\Persistence\User;
 use Simon\ClientesAdministracion\Application\ManageCustomers;
+use Simon\ClientesAdministracion\UI\CustomerSearch;
 use Simon\Shared\Domain\BusinessRuleViolation;
 use Simon\Shared\Domain\PermissionDenied;
 use Tests\TestCase;
@@ -36,6 +39,24 @@ class CustomerProfilesTest extends TestCase
     private function profile(): array
     {
         return ['name' => 'Cliente actualizado', 'cuit' => '20-12345678-9', 'phone' => '+54 376 4555555', 'email' => 'contacto@example.test'];
+    }
+
+    public function test_livewire_customer_search_filters_and_rechecks_access(): void
+    {
+        app(ManageCustomers::class)->register($this->admin->id, 'Comercio diferente', '30876543210', '');
+        $user = User::factory()->create();
+        $role = DB::table('access_roles')->insertGetId(['name' => 'Clientes temporal']);
+        DB::table('access_role_permissions')->insert(['role_id' => $role, 'permission' => 'clients.manage']);
+        DB::table('access_user_roles')->insert(['user_id' => $user->id, 'role_id' => $role]);
+        $this->actingAs($user);
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+        $component = Livewire::test(CustomerSearch::class)
+            ->set('query', 'original')->call('search')
+            ->assertSee('Cliente original')->assertDontSee('Comercio diferente')
+            ->call('clear')->assertSee('Cliente original')->assertSee('Comercio diferente');
+        DB::table('access_role_permissions')->where('role_id', $role)->delete();
+        $component->call('search')->assertForbidden();
     }
 
     public function test_registration_and_profile_retrieval_include_contacts_and_initial_credit_observation(): void

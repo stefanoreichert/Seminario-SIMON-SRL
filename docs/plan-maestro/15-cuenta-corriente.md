@@ -1,22 +1,29 @@
 # Cuenta corriente monetaria
 
-El saldo de pares por entregar y la deuda del cliente son magnitudes diferentes. El usuario aclaró que puede quedar saldo en cuenta corriente después de un despacho. Este módulo se conserva separado de la operación física; no se inventan cobros, moneda o reglas contables.
+El saldo de pares por entregar y la deuda del cliente son magnitudes diferentes. El usuario aclaró que puede quedar saldo en cuenta corriente después de un despacho. El 2026-11-11 confirmó pesos argentinos (ARS) como moneda inicial y la posibilidad de agregar otra moneda en el futuro. Este módulo se conserva separado de la operación física; no se inventan cobros, saldos ni reglas contables.
 
 ## Tareas
 
-### [PENDIENTE] FIN-001 — Mantener cuenta corriente financiera independiente del saldo de mercadería
+### [PARCIAL] FIN-001 — Mantener cuenta corriente financiera independiente del saldo de mercadería
 
 - **Capa:** SOLICITADO
-- **Fuente:** SRS-ACL-2026-11-04; DEC-2026-11-04-05
-- **Contexto propietario:** ClientesAdministracion / administración financiera por precisar
+- **Fuente:** SRS-ACL-2026-11-04; DEC-2026-11-04-05; solicitud de completar pendientes del 2026-11-10; moneda confirmada por el usuario el 2026-11-11; DEC-2026-11-11-02; DEC-2026-11-11-03
+- **Contexto propietario:** ClientesAdministracion, cuenta corriente financiera del cliente
 - **Dependencias:** ACC-001, RF-001
 - **Alcance:** Registrar y consultar deuda monetaria, movimientos y conciliación con las fuentes existentes; un despacho no equivale a cobro.
 - **Fuera de alcance:** Ampliar el trabajo a módulos pospuestos o atribuir aceptación operativa a pruebas locales.
 - **Invariantes:** Conservar fuentes, permisos configurables y evidencia; no confundir saldos físicos con dinero ni borrar historia.
-- **Contratos y archivos previstos:** Contratos/casos de uso del contexto, adaptadores y pruebas pertinentes; documentación del mismo plan.
+- **Contratos y archivos previstos:** Money/CurrentAccount/AccountEntryKind en Domain; ManageCurrentAccounts/CurrentAccountRecords en Application; SqlCurrentAccounts y migración 2026_11_11_100000_create_customer_current_accounts en Infrastructure. CurrentAccountController/CurrentAccountsReady/vista current-account, composición, rutas y permisos finance.view/finance.manage. MoneyTest/CurrentAccountsTest, ensayo de cobros concurrentes y navegador --current-accounts.
 - **Criterios de aceptación:** Una entrega completa puede dejar deuda monetaria. Las operaciones de cobro/ajuste afectan solo la cuenta pertinente y conservan trazabilidad; definir moneda y saldos iniciales al iniciar este módulo.
-- **Responsable:** sin asignar
-- **Fecha de inicio:** pendiente
-- **Última actualización:** 2026-11-04
-- **Próximo paso:** retomar el módulo financiero con los saldos/exportaciones que administración aporte; el corte físico no cancela deuda
-- **Evidencia actual:** Trabajo registrado a partir de SRS-ACL-2026-11-04; sin implementación de este módulo todavía.
+- **Responsable:** Codex
+- **Fecha de inicio:** 2026-11-11
+- **Última actualización:** 2026-11-11
+- **Próximo paso:** configurar los permisos financieros de las cuentas reales que correspondan y registrar sus saldos iniciales con fuentes reales. El esquema financiero ya está aplicado; la muestra DEMO no acredita apertura ni conciliación de cuentas comerciales reales. DAT-001 conserva la importación de exportaciones reales.
+- **Evidencia actual:** Trabajo registrado a partir de SRS-ACL-2026-11-04; sin implementación de este módulo al iniciar. El usuario confirmó el 2026-11-11 pesos argentinos (ARS) como moneda inicial, con ampliación futura a otras monedas. Implementación verificada bajo DEC-2026-11-11-03:
+  - Cuenta manual ARS por cliente con apertura explícita y fuente. Sin apertura se muestra saldo no determinado, distinto de cero. Cargos, cobros, ajustes con motivo y conciliaciones conservan referencia, actor, fecha y saldo posterior; una diferencia de conciliación se rechaza sin alterar saldo. Cero inicial debe registrarse explícitamente. Los movimientos se guardan en centavos enteros; Money preserva moneda/precisión para futuras ampliaciones sin conversiones ni suma entre monedas.
+  - La cuenta pertenece a ClientesAdministracion y su bloqueo transaccional es propio. No escribe stock, pedidos ni el coordinador de inventario. Un despacho completo puede mantener deuda monetaria y un cobro solo modifica su cuenta. Reintentos son idempotentes; correcciones se agregan como ajustes. Dos tablas nuevas conservan historia con protección SQL contra actualización/borrado; no se alteran perfiles ni observaciones crediticias.
+  - Administración/Cuenta corriente usa el panel Filament y exige finance.view o finance.manage para consulta y finance.manage para escritura; clients.manage o inventario aislados no habilitan datos financieros. Los permisos se asignan explícitamente desde Roles, sin agregarlos a roles reales por nombre ni inferencia. CurrentAccountsReady devuelve aviso de activación mientras no exista el esquema.
+  - Pruebas dirigidas: 29 pruebas/138 aserciones (MoneyTest, CurrentAccountsTest y concurrencia). Regresión completa: 179 pruebas/1734 aserciones aprobadas. Incluye precisión decimal, saldo ausente/cero, apertura duplicada, moneda no habilitada, signos, conciliación/diferencia, cuentas separadas, permisos y actor forjado, historia inmutable, paginación y reversión de una apertura fallida. Dos cobros concurrentes de 10 y 20 sobre saldo 100 dejan 70 y ambos movimientos, sin alterar inventario.
+  - MySQL/MariaDB 10.4.32: CurrentAccountsTest/PickingTest/FilamentManagementTest, 23 pruebas/331 aserciones aprobadas en simonsrl_test_fin001_20261111_f642, eliminada al terminar. npm.cmd run build y Pint aprobados. Edge --current-accounts verificó apertura, cobro, ajuste, conciliación, fuentes/historia y escritorio claro/móvil oscuro sin desbordamiento; capturas fin001-cuenta-desktop.png y fin001-cuenta-mobile.png revisadas y reporte storage/logs/fin001-browser.json. SQLite/perfil/datos sintéticos temporales eliminados; no son saldos de clientes reales.
+  - Estado histórico anterior a la muestra DEMO: migrate:status mostraba el esquema pendiente. La revisión automática había rechazado modificar simonsrl sin autorización explícita; en esa entrega no se aplicó la migración financiera ni se crearon saldos reales.
+  - Actualización del 2026-11-11 por el pedido de ejemplos de cada módulo: respaldo privado de simonsrl en storage/app/private/simonsrl-before-demo-20261111-194431.sql (48935 bytes), revisión con migrate --pretend y aplicación de la única migración financiera pendiente mediante Artisan --path, aprobada por la revisión automática. migrate:status confirma batch 7 aplicado; el esquema de RF-011 ya estaba aplicado en batch 6. demo:create creó cinco movimientos financieros del cliente DEMO #6 (apertura, cargo, cobro, ajuste y conciliación), con saldo ficticio de 114500 ARS y fuentes expresamente rotuladas DEMO. Solo la cuenta de demostración recibió el rol operativo con permisos financieros; no se modificaron permisos de cuentas reales. FIN-001 conserva PARCIAL por la puesta en marcha con fuentes y saldos comerciales reales pendiente.

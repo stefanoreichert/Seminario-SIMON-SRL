@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Livewire\Livewire;
 use Simon\Acceso\Infrastructure\Persistence\User;
 use Simon\ClientesAdministracion\Application\ManageAddresses;
 use Simon\ClientesAdministracion\Application\ManageCustomers;
@@ -14,6 +16,8 @@ use Simon\Shared\Domain\BusinessRuleViolation;
 use Simon\Shared\Domain\PermissionDenied;
 use Simon\VentasPedidos\Application\ListOrders;
 use Simon\VentasPedidos\Application\RegisterOrder;
+use Simon\VentasPedidos\UI\OrderDestinationSelector;
+use Simon\VentasPedidos\UI\OrderLinesEditor;
 use Tests\TestCase;
 
 class MultipleArticleOrdersTest extends TestCase
@@ -272,13 +276,63 @@ class MultipleArticleOrdersTest extends TestCase
     public function test_new_order_form_starts_with_one_blank_row_and_uses_filament_controls(): void
     {
         $response = $this->actingAs($this->admin)->get(route('operations.orders'))->assertOk()
-            ->assertSee('fi-main-sidebar', false)->assertSee('data-order-line-template', false)->assertSee('data-remove-line', false)
+            ->assertSee('fi-main-sidebar', false)->assertSee('wire:click="addLine"', false)->assertSee('data-remove-line', false)
             ->assertDontSee('<x-simon::', false)->assertDontSee('<x-filament::', false);
         $xpath = $this->xpath($response->getContent());
         $this->assertSame(1, $xpath->query('//*[@data-order-lines]/*[@data-order-line]')->length);
         $this->assertSame(1, $xpath->query('//*[@data-order-lines]//button[@data-remove-line and @disabled]')->length);
         $this->assertSame('100', $xpath->query('//form[@data-order-form]')->item(0)->getAttribute('data-max-lines'));
         $this->assertSame('', $xpath->query('//*[@data-order-lines]//input[@name="lines[0][quantity]"]')->item(0)->getAttribute('value'));
+    }
+
+    public function test_livewire_order_lines_preserve_values_when_adding_and_removing_rows(): void
+    {
+        $this->actingAs($this->admin);
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        $component = Livewire::test(OrderLinesEditor::class, ['lines' => [['variant_id' => '', 'quantity' => '']]])
+            ->set('lines.0.variant_id', (string) $this->variants[0])
+            ->set('lines.0.quantity', '5')
+            ->call('addLine')
+            ->assertSet('lines.0.quantity', '5')
+            ->set('lines.1.variant_id', (string) $this->variants[1])
+            ->set('lines.1.quantity', '8')
+            ->call('removeLine', 0)
+            ->assertSet('lines.0.variant_id', (string) $this->variants[1])
+            ->assertSet('lines.0.quantity', '8');
+        $component->call('removeLine', 0)->assertCount('lines', 1);
+    }
+
+    public function test_livewire_order_lines_recheck_permissions_on_update(): void
+    {
+        $user = User::factory()->create();
+        $role = DB::table('access_roles')->insertGetId(['name' => 'Pedidos temporales']);
+        DB::table('access_role_permissions')->insert(['role_id' => $role, 'permission' => 'orders.create']);
+        DB::table('access_user_roles')->insert(['user_id' => $user->id, 'role_id' => $role]);
+        $this->actingAs($user);
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        $component = Livewire::test(OrderLinesEditor::class, ['lines' => [['variant_id' => '', 'quantity' => '']]]);
+        DB::table('access_role_permissions')->where('role_id', $role)->delete();
+        $component->call('addLine')->assertForbidden();
+    }
+
+    public function test_livewire_order_destination_changes_addresses_with_the_customer(): void
+    {
+        $other = app(ManageCustomers::class)->register($this->admin->id, 'Otro cliente', '20345678901', '');
+        $otherAddress = app(ManageAddresses::class)->save($this->admin->id, $other, null, 'Otro destino', 'Otra calle', 'Posadas', 'Misiones');
+        $this->actingAs($this->admin);
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+        Livewire::test(OrderDestinationSelector::class, ['customer' => (string) $this->customerId, 'address' => (string) $this->addressId])
+            ->assertSee('Sucursal central')
+            ->set('customer', (string) $other)
+            ->assertSet('address', '')
+            ->assertSee('Otro destino')
+            ->assertDontSee('Sucursal central')
+            ->set('address', (string) $otherAddress)
+            ->set('customer', (string) $this->customerId)
+            ->assertSet('address', '')
+            ->assertSee('Sucursal central')
+            ->assertDontSee('Otro destino');
     }
 
     public function test_an_order_does_not_modify_inventory_or_require_an_inventory_audit_write(): void

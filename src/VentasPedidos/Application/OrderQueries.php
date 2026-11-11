@@ -12,4 +12,11 @@ interface OrderQueries
      * @return list<object{id:int,order_id:int,variant_id:int,quantity:int,dispatched:int,pending:int,status:string,customer_id:int,delivery_destination:?array}>
      */
     public function lines(array $orderIds): array;
+
+    /** @param list<int> $customerIds
+     * @return array{items:list<object>,total:int,page:int,pages:int}
+     */
+    public function authorizationPage(string $term, array $customerIds, int $page): array;
+
+    public function authorizationOrder(int $id): ?object;
 }

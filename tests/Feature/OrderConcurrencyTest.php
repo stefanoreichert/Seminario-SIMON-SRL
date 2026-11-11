@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Simon\Acceso\Infrastructure\Persistence\User;
+use Simon\ClientesAdministracion\Application\ManageCurrentAccounts;
 use Simon\ClientesAdministracion\Application\ManageCustomers;
+use Simon\InventarioTrazabilidad\Application\ManagePicking;
 use Simon\InventarioTrazabilidad\Application\MoveStock;
 use Simon\InventarioTrazabilidad\Application\PrepareInventory;
 use Simon\InventarioTrazabilidad\Infrastructure\SqlInventory;
@@ -137,5 +139,33 @@ class OrderConcurrencyTest extends TestCase
         $this->assertDatabaseHas('inventory_batches', ['quantity' => $dispatched ? 16 : 20]);
         $this->assertDatabaseHas('business_order_lines', ['dispatched' => $dispatched ? 4 : 0]);
         $this->assertSame($dispatched ? 2 : 1, app(SqlInventory::class)->verify()['sequence']);
+    }
+
+    public function test_competing_scans_cannot_pick_more_pairs_than_the_pending_line(): void
+    {
+        $request = $this->registration(1);
+        $id = app(RegisterOrder::class)->handle($this->admin->id, $request['token'], $this->customerId, 'F', $request['lines']);
+        app(MoveStock::class)->opening($this->admin->id, (string) Str::uuid(), $this->variantId, 'LOTE-PICKING', '2026-01-01', 2);
+        $batch = (int) DB::table('inventory_batches')->value('id');
+        $line = (int) DB::table('business_order_lines')->where('order_id', $id)->value('id');
+        app(ManagePicking::class)->identify($this->admin->id, (string) Str::uuid(), $batch);
+        $codes = DB::table('inventory_pair_units')->pluck('code')->all();
+        $results = $this->concurrently(array_map(fn (string $code): array => ['action' => 'pick', 'actor_id' => $this->admin->id, 'token' => (string) Str::uuid(), 'line_id' => $line, 'code' => $code], $codes));
+        $this->assertSame(1, count(array_filter($results, fn (array $result): bool => $result['accepted'])));
+        $this->assertSame(1, DB::table('inventory_pair_units')->where('state', 'picked')->count());
+        $this->assertDatabaseHas('inventory_batches', ['id' => $batch, 'quantity' => 2]);
+        $this->assertDatabaseHas('business_order_lines', ['id' => $line, 'dispatched' => 0]);
+    }
+
+    public function test_parallel_payments_keep_both_financial_movements_without_touching_inventory(): void
+    {
+        app(ManageCurrentAccounts::class)->post($this->admin->id, (string) Str::uuid(), $this->customerId, 'opening', '100', 'Saldo inicial de prueba');
+        $head = (array) DB::table('inventory_audit_head')->first();
+        $results = $this->concurrently(array_map(fn (string $amount): array => ['action' => 'finance', 'actor_id' => $this->admin->id, 'token' => (string) Str::uuid(), 'customer_id' => $this->customerId, 'amount' => $amount], ['10', '20']));
+        $this->assertSame([true, true], array_column($results, 'accepted'));
+        $report = app(ManageCurrentAccounts::class)->overview($this->admin->id, $this->customerId);
+        $this->assertSame(7000, $report['account']['balance_minor']);
+        $this->assertSame(3, $report['entries']['total']);
+        $this->assertSame($head, (array) DB::table('inventory_audit_head')->first());
     }
 }

@@ -80,9 +80,10 @@ El estado inicial era un esqueleto sin procesos comerciales. El corte INV-001 in
 - **Criterios de aceptación:** Un despacho sin validación, con facturación no validada o crédito no validado es rechazado sin salida de stock; con ambas validaciones y permisos correctos puede continuar; queda identificada la administración que validó. Se prueban accesos directos y cambios concurrentes según la vigencia que se acuerde.
 - **Responsable:** Codex
 - **Fecha de inicio:** 2026-11-04
-- **Última actualización:** 2026-11-04
+- **Última actualización:** 2026-11-11
 - **Próximo paso:** completar el ciclo de vigencia/revocación según el proceso definitivo y verificar integración con el módulo comercial completo
 - **Evidencia actual:** La base de INV-001 guarda ambas validaciones y condiciones; el caso de uso rechaza despachos sin ellas y obtiene bloqueo de la autorización durante la transacción. No se integra ni genera facturación fiscal; quedan recorridos comerciales completos por ampliar.
+  - Refactorización del 2026-11-11: listado paginado y búsqueda Livewire por número o cliente, con facturación y crédito separados por pedido confirmado o parcial. Al revisar un pedido se muestran cliente, artículos, cantidades, validación y condiciones guardadas; el formulario usa el caso de uso y la autorización existentes. QueryDispatchAuthorizations compone los contratos de cada contexto según DEC-2026-11-11-04. Se comprueban aislamiento entre pedidos, recuperación de casillas y condiciones, rechazo tras pérdida de permiso y estados no autorizables, y consulta más allá de 200 pedidos. Regresión: 30 pruebas y 381 aserciones; Pint aprobado. Ensayo en navegador con SQLite temporal: selección, foco, guardado Livewire, recuperación de datos, botón de 48 px y ausencia de desbordamiento horizontal a 390 px. La mejora de interfaz no cierra las definiciones pendientes de vigencia y revocación.
 
 ### [PENDIENTE] RF-004 — Generar y gestionar formularios Rentas 322 y 344 para entidades públicas
 
